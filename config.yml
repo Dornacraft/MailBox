@@ -1,0 +1,7 @@
+plugin-prefix: "&6[&eMailBox&6]:&r "
+
+database:
+  host: localhost
+  database: database
+  user: 'user'
+  password: 'password'

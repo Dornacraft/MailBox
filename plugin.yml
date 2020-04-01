@@ -1,0 +1,5 @@
+name: Dornacraft-MailBox
+version: 0.1a
+description: envoyer et recevoir des messages et des objets
+author: Bletrazer
+main: fr.dornacraft.mailbox.Main
