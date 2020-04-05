@@ -48,14 +48,13 @@ public class MailBoxController {
 	// utile lors des reload
 	public void initialize() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			dataManager.putHolder(player.getUniqueId(), getHolderFromDataBase(player));
+			dataManager.getCache().put(player.getUniqueId(), getHolderFromDataBase(player));
 		}
 	}
 
-	public void sendLetter(Player recipient, ItemStack book) { // FIXME changer player par UUID ?
+	public void sendLetter(Player recipient, ItemStack book) { // FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
 		if (recipient != null) {
-			if (book.getType() == Material.WRITTEN_BOOK && book.hasItemMeta()
-					&& book.getItemMeta() instanceof BookMeta) {
+			if (book.getType() == Material.WRITTEN_BOOK && book.hasItemMeta() && book.getItemMeta() instanceof BookMeta) {
 				BookMeta bookMeta = (BookMeta) book.getItemMeta();
 
 				String author = bookMeta.getAuthor();
@@ -64,9 +63,16 @@ public class MailBoxController {
 
 				Data data = new DataFactory(recipient.getUniqueId(), author, object);
 				LetterData letterData = new LetterData(data, LetterType.STANDARD, content, false);
-				LetterDataSQL.getInstance().create(letterData);
+				
+				
+				DataManager dataManager = MailBoxController.getInstance().getDataManager();
+				DataHolder holder = dataManager.getDataHolder(recipient.getUniqueId());
 
-				dataManager.addData(recipient.getUniqueId(), letterData);
+				if (holder != null) {
+					holder.addData(data);
+				}
+				
+				LetterDataSQL.getInstance().create(letterData);
 				recipient.sendMessage("Vous avez reçu un lettre de la part de " + author);
 			}
 		}
@@ -116,11 +122,17 @@ public class MailBoxController {
 
 	public void sendItem(Player recipient, ItemStack itemstack) {
 		if (recipient != null) {
-			Data data = new DataFactory(recipient.getUniqueId(), recipient.getName(), "object hard code");
+			Data data = new DataFactory(recipient.getUniqueId(), recipient.getName(), "object hard code"); //TODO parametrize author
 			ItemData itemData = new ItemData(data, itemstack, Duration.ofSeconds(60));// TODO parametrize duration sur les items
 			ItemDataSQL.getInstance().create(itemData);
-
-			dataManager.addData(recipient.getUniqueId(), itemData);
+			
+			DataHolder pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
+			if(pHolder == null) {
+				getDataManager().getCache().put(recipient.getUniqueId(), new DataHolder(new ArrayList<Data>()));
+				pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
+			}
+			
+			pHolder.addData(itemData);
 			recipient.sendMessage("Vous avez reçu un objet de la part de " + recipient.getName());
 		}
 	}

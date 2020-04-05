@@ -12,7 +12,7 @@ public class QuitListener implements Listener {
 	@EventHandler
 	private void onQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
-		MailBoxController.getInstance().getDataManager().remove(player.getUniqueId());
+		MailBoxController.getInstance().getDataManager().getCache().remove(player.getUniqueId());
 	}
 	
 }

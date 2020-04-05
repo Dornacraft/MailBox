@@ -12,7 +12,7 @@ public class JoinListener implements Listener {
 	@EventHandler
 	private void onJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		MailBoxController.getInstance().getDataManager().putHolder(player.getUniqueId(), MailBoxController.getInstance().getHolderFromDataBase(player));
+		MailBoxController.getInstance().getDataManager().getCache().put(player.getUniqueId(), MailBoxController.getInstance().getHolderFromDataBase(player));
 
 	}
 

@@ -19,25 +19,8 @@ public class DataManager {
 		return map.get(uuid);
 	}
 	
-	public void putHolder(UUID uuid, DataHolder holder) {//ajout par rapport au diagrame de class
-		map.put(uuid, holder);
-	}
-	
-	public void remove(UUID uuid) {//ajout par rapport au diagrame de class
-		this.map.remove(uuid);
-	}
-
-	public void addData(UUID uuid, Data data) { //ajout par rapport au diagrame de class
-		DataHolder holder = getDataHolder(uuid);
-
-		if (holder == null) {
-			putHolder(uuid, new DataHolder(new ArrayList<>()));
-			map.put(uuid, new DataHolder(new ArrayList<Data>()));
-			holder = getDataHolder(uuid);
-		}
-
-		holder.addData(data);
-
+	public Map<UUID, DataHolder> getCache() {//ajout par rapport au diagrame de class
+		return map;
 	}
 
 	public <T extends Data> List<T> getTypeData(DataHolder dataHolder, Class<T> c) {
