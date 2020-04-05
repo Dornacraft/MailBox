@@ -1,6 +1,7 @@
 package fr.dornacraft.mailbox;
 
 import java.time.Duration;
+import java.util.UUID;
 
 import org.bukkit.inventory.ItemStack;
 
@@ -9,10 +10,17 @@ public class ItemData extends Data {
 	private Duration duration;
 	private ItemStack item;
 
-	public ItemData(String author, String object, ItemStack itemstack, Duration duration) {
-		super(author, object);
+	public ItemData(UUID uuid, String author, String object, ItemStack itemstack, Duration duration) {
+		super(uuid, author, object);
 		this.setItem(itemstack);
 		this.setDuration(duration);
+	}
+	
+	public ItemData(Data data, ItemStack itemstack, Duration duration) {
+		super(data.getId(), data.getUuid(), data.getAuthor(), data.getObject(), data.getCreationDate());
+		this.setItem(itemstack);
+		this.setDuration(duration);
+		
 	}
 
 	public Duration getDuration() {
@@ -32,7 +40,7 @@ public class ItemData extends Data {
 	}
 
 	public ItemData clone() {
-		ItemData res = new ItemData(this.getAuthor(), this.getObject(), this.getItem(), this.getDuration());
+		ItemData res = new ItemData(this.getUuid(), this.getAuthor(), this.getObject(), this.getItem(), this.getDuration());
 		res.setId(this.getId());
 		return res;
 	}

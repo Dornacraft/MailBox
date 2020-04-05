@@ -8,25 +8,39 @@ import java.util.Map;
 import java.util.UUID;
 
 public class DataManager {
+	
+	public DataManager() {
+		
+	}
+	
+	private Map<UUID, DataHolder> map = new HashMap<>();
 
-	private static Map<UUID, DataHolder> map = new HashMap<>();
-
-	public static DataHolder getDataHolder(UUID uuid) {
+	public DataHolder getDataHolder(UUID uuid) {
 		return map.get(uuid);
 	}
+	
+	public void putHolder(UUID uuid, DataHolder holder) {//ajout par rapport au diagrame de class
+		map.put(uuid, holder);
+	}
+	
+	public void remove(UUID uuid) {//ajout par rapport au diagrame de class
+		this.map.remove(uuid);
+	}
 
-	public static void addData(UUID uuid, Data data) {
+	public void addData(UUID uuid, Data data) { //ajout par rapport au diagrame de class
 		DataHolder holder = getDataHolder(uuid);
 
 		if (holder == null) {
-			holder = map.put(uuid, new DataHolder(new ArrayList<Data>()));
+			putHolder(uuid, new DataHolder(new ArrayList<>()));
+			map.put(uuid, new DataHolder(new ArrayList<Data>()));
+			holder = getDataHolder(uuid);
 		}
 
 		holder.addData(data);
 
 	}
 
-	public static <T extends Data> List<T> getTypeData(DataHolder dataHolder, Class<T> c) {
+	public <T extends Data> List<T> getTypeData(DataHolder dataHolder, Class<T> c) {
 		List<T> res = new ArrayList<>();
 
 		for (Data data : dataHolder.getDataList()) {
@@ -34,10 +48,10 @@ public class DataManager {
 				res.add(c.cast(data));
 			}
 		}
-		return null;
+		return res;
 	}
 
-	public static <T extends Data> void purgeData(DataHolder dataHolder, Class<T> c) {
+	public <T extends Data> void purgeData(DataHolder dataHolder, Class<T> c) {
 		Iterator<Data> it = dataHolder.getDataList().iterator();
 
 		while (it.hasNext()) {

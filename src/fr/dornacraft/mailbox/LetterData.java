@@ -2,6 +2,7 @@ package fr.dornacraft.mailbox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class LetterData extends Data {
 
@@ -9,9 +10,18 @@ public class LetterData extends Data {
 	private LetterType letterType;
 	private Boolean isRead;
 
-	public LetterData(String author, String object, LetterType letterType, List<String> content, Boolean isRead) {
-		super(author, object);
+	public LetterData(UUID uuid, String author, String object, LetterType letterType, List<String> content, Boolean isRead) {
+		super(uuid, author, object);
 		this.setLetterType(letterType);
+		this.setContent(content);
+		this.setIsRead(isRead);
+		
+	}
+	
+	public LetterData(Data data, LetterType type, List<String> content, Boolean isRead) {
+		super(data.getId(), data.getUuid(), data.getAuthor(), data.getObject(), data.getCreationDate());
+		this.setCreationDate(data.getCreationDate());
+		this.setLetterType(type);
 		this.setContent(content);
 		this.setIsRead(isRead);
 		
@@ -42,7 +52,7 @@ public class LetterData extends Data {
 	}
 	
 	public LetterData clone() {
-		LetterData res =  new LetterData(this.getAuthor(), this.getObject(), this.getLetterType(), this.getContent(), this.getIsRead());
+		LetterData res =  new LetterData(this.getUuid(), this.getAuthor(), this.getObject(), this.getLetterType(), this.getContent(), this.getIsRead());
 		res.setId(this.getId());
 		return res;
 	}

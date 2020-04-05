@@ -1,5 +1,10 @@
-name: Dornacraft-MailBox
+name: MailBox
 version: 0.1a
 description: envoyer et recevoir des messages et des objets
 author: Bletrazer
+api-version: 1.13
 main: fr.dornacraft.mailbox.Main
+commands:
+  mailbox:
+    description: commande par defaut
+    permission: mailbox.admin
