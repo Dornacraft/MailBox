@@ -2,6 +2,7 @@ package fr.dornacraft.mailbox;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.command.Cmd_mailbox;
 import fr.dornacraft.mailbox.listeners.JoinListener;
 import fr.dornacraft.mailbox.listeners.QuitListener;

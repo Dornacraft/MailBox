@@ -8,9 +8,9 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import fr.dornacraft.mailbox.DataHolder;
-import fr.dornacraft.mailbox.ItemData;
-import fr.dornacraft.mailbox.MailBoxController;
+import fr.dornacraft.mailbox.DataManager.DataHolder;
+import fr.dornacraft.mailbox.DataManager.ItemData;
+import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.sql.ItemDataSQL;
 
 public class Cmd_mailbox implements CommandExecutor {
@@ -23,7 +23,7 @@ public class Cmd_mailbox implements CommandExecutor {
 		if (args.length >= 1) {
 			if (args[0].equalsIgnoreCase("item") && args.length == 2) {
 				if (args[1].equalsIgnoreCase("send")) {
-					MailBoxController.getInstance().sendItem(player, player.getInventory().getItemInMainHand());
+					MailBoxController.getInstance().sendItem(player, player.getInventory().getItemInHand());
 
 				} else if (args[1].equalsIgnoreCase("getall")) {
 					DataHolder holder = MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId());
@@ -45,7 +45,7 @@ public class Cmd_mailbox implements CommandExecutor {
 
 				}
 			} else if (args.length == 1 && args[0].equalsIgnoreCase("letter")) {
-				MailBoxController.getInstance().sendLetter(player, player.getInventory().getItemInMainHand());
+				MailBoxController.getInstance().sendLetter(player, player.getInventory().getItemInHand() );
 			}
 		}
 		return false;

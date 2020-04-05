@@ -1,4 +1,4 @@
-package fr.dornacraft.mailbox;
+package fr.dornacraft.mailbox.DataManager;
 
 import java.util.ArrayList;
 import java.util.List;

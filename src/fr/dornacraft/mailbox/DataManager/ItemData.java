@@ -1,4 +1,4 @@
-package fr.dornacraft.mailbox;
+package fr.dornacraft.mailbox.DataManager;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class ItemData extends Data {
 	private void setDuration(Duration duration) {
 		this.duration = duration;
 	}
-
+	
 	public ItemStack getItem() {
 		return item;
 	}

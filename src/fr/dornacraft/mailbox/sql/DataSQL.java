@@ -12,8 +12,8 @@ import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
-import fr.dornacraft.mailbox.Data;
-import fr.dornacraft.mailbox.DataFactory;
+import fr.dornacraft.mailbox.DataManager.Data;
+import fr.dornacraft.mailbox.DataManager.DataFactory;
 
 public class DataSQL extends DAO<Data> {
 	

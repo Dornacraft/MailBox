@@ -5,7 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import fr.dornacraft.mailbox.MailBoxController;
+import fr.dornacraft.mailbox.DataManager.MailBoxController;
 
 public class QuitListener implements Listener {
 	

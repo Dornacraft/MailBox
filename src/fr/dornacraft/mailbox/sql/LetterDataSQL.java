@@ -8,9 +8,9 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
-import fr.dornacraft.mailbox.Data;
-import fr.dornacraft.mailbox.LetterData;
-import fr.dornacraft.mailbox.LetterType;
+import fr.dornacraft.mailbox.DataManager.Data;
+import fr.dornacraft.mailbox.DataManager.LetterData;
+import fr.dornacraft.mailbox.DataManager.LetterType;
 
 public class LetterDataSQL extends DAO<LetterData> {
 

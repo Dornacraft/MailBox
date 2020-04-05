@@ -5,7 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-import fr.dornacraft.mailbox.MailBoxController;
+import fr.dornacraft.mailbox.DataManager.MailBoxController;
 
 public class JoinListener implements Listener {
 

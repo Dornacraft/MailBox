@@ -1,4 +1,4 @@
-package fr.dornacraft.mailbox;
+package fr.dornacraft.mailbox.DataManager;
 
 import java.time.Duration;
 import java.util.ArrayList;

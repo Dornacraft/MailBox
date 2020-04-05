@@ -1,4 +1,4 @@
-package fr.dornacraft.mailbox;
+package fr.dornacraft.mailbox.DataManager;
 
 import java.sql.Timestamp;
 import java.util.UUID;
