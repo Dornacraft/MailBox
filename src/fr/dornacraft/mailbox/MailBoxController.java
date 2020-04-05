@@ -25,7 +25,11 @@ public class MailBoxController {
 	public static MailBoxController getInstance() {
 		return INSTANCE;
 	}
-
+	
+	/**
+	 * @param player joueyur cible
+	 * @return un DataHolder avec les données du joueur cible trouvés directement depuis la base de donnée.
+	 */
 	public DataHolder getHolderFromDataBase(Player player) {// ajout par rapport au diagramme
 		DataHolder res = new DataHolder(new ArrayList<>());
 		List<Data> dataList = DataSQL.getInstance().getDataList(player);

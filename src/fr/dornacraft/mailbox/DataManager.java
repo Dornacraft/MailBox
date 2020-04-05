@@ -14,7 +14,12 @@ public class DataManager {
 	}
 	
 	private Map<UUID, DataHolder> map = new HashMap<>();
-
+	
+	/**
+	 * 
+	 * @param uuid UUID du joueur concerné
+	 * @return le DataHolder en cache du joueur, peut etre null.
+	 */
 	public DataHolder getDataHolder(UUID uuid) {
 		return map.get(uuid);
 	}
