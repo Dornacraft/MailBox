@@ -128,7 +128,7 @@ public class ItemDataSQL extends DAO<ItemData>{
 				ItemStack itemstack = fromBase64(resultset.getString("itemStack"));
 				Duration duration = Duration.ofSeconds(resultset.getLong("durationInSeconds"));
 				if(data != null) {
-					res = new ItemData(data, itemstack, duration);//TODO ajouter duration
+					res = new ItemData(data, itemstack, duration);
 					
 				}
 				

@@ -59,7 +59,6 @@ public class DataManager {
 
 			if (c.isInstance(data)) {
 				it.remove();
-				// dataHolder.removeData(data.getId());
 			}
 
 		}
