@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.LocalDateTime;
 
 import org.bukkit.craftbukkit.libs.org.apache.commons.io.output.ByteArrayOutputStream;
 import org.bukkit.inventory.ItemStack;
@@ -68,14 +66,6 @@ public class ItemDataSQL extends DAO<ItemData>{
 		}
 
 		return res;
-	}
-	
-	public static Integer compareToNow(Timestamp ts, Duration duration) {
-
-		LocalDateTime date = ts.toLocalDateTime(); // to datetime
-		LocalDateTime added = date.plus(duration);
-		return added.compareTo(LocalDateTime.now());
-
 	}
 	
 	private static ItemDataSQL INSTANCE = new ItemDataSQL();

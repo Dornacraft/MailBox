@@ -1,8 +1,11 @@
 package fr.dornacraft.mailbox.DataManager;
 
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -56,7 +59,7 @@ public class MailBoxController {
 		}
 	}
 
-	public void sendLetter(Player recipient, ItemStack book) { // FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
+	public void sendLetter(Player recipient, ItemStack book) { //FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
 		if (recipient != null) {
 			if (book.getType() == Material.WRITTEN_BOOK && book.hasItemMeta() && book.getItemMeta() instanceof BookMeta) {
 				BookMeta bookMeta = (BookMeta) book.getItemMeta();
@@ -69,11 +72,9 @@ public class MailBoxController {
 				LetterData letterData = new LetterData(data, LetterType.STANDARD, content, false);
 				
 				
-				DataManager dataManager = MailBoxController.getInstance().getDataManager();
 				DataHolder holder = dataManager.getDataHolder(recipient.getUniqueId());
-
 				if (holder != null) {
-					holder.addData(data);
+					holder.addData(letterData);
 				}
 				
 				LetterDataSQL.getInstance().create(letterData);
@@ -85,9 +86,32 @@ public class MailBoxController {
 	public void respondToLetter(Player player, Long id, ItemStack book) {// TODO
 
 	}
-
-	public void readLetter(Player player, Long id) {// TODO
-
+	
+	/**
+	 * Envoie le contenue de la lettre au joueur cible et la marque comme ayant été lu
+	 * @param player joueur cible
+	 * @param id l iD de la lettre a afficher dans le chat
+	 */
+	public void readLetter(Player player, Long id) {
+		LetterData letterData = (LetterData) MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId()).getData(id);
+		StringBuilder letter = new StringBuilder();
+		letter.append("\n");
+		letter.append(String.format("§e§lAuteur(e):§r %s\n", letterData.getAuthor()));
+		
+		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
+		
+		letter.append(String.format("§e§lDate de réçéption:§r %s\n", sdf.format(letterData.getCreationDate()) ));
+		letter.append(String.format("§e§lObjet:§r %s\n", letterData.getObject() ));
+		letter.append("§e§lMessage:§r\n");
+		
+		for(String page : letterData.getContent()) {
+			letter.append("§r" + page + "§r");
+		}
+		
+		player.sendMessage(letter.toString());
+		
+		letterData.setIsRead(true);
+		LetterDataSQL.getInstance().update(letterData);
 	}
 
 	public void deleteLetter(Player player, Long id) {
@@ -100,34 +124,62 @@ public class MailBoxController {
 		}
 
 	}
+	
+	public void deleteData(Player player, Long id) {
+		DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
+		Data data = pHolder.getData(id);
+		
+		if(data instanceof ItemData) {
+			MailBoxController.getInstance().deleteItem(player.getUniqueId(), data.getId());
+			
+		} else if (data instanceof LetterData) {
+			MailBoxController.getInstance().deleteLetter(player, data.getId());
+		}
+	}
 
 	public void purgeLetters(Player player) {
 		dataManager.purgeData(dataManager.getDataHolder(player.getUniqueId()), LetterData.class);
 	}
 
 	public void recoverItem(Player player, Long id) {
-		DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
+		
+		if(player.getInventory().firstEmpty() != -1) {
+			DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
+			Data data = pHolder.getData(id);
+	
+			if (data instanceof ItemData) {
+				ItemData itemData = (ItemData) data;
+				player.getInventory().addItem(itemData.getItem());
+				deleteItem(player.getUniqueId(), id);
+	
+			}
+		} else {
+			//TODO playsound ?
+		}
+	}
+	
+	public Boolean isOutOfDate(ItemData itemData) {
+		
+		LocalDateTime date = itemData.getCreationDate().toLocalDateTime(); // to datetime
+		LocalDateTime added = date.plus(itemData.getDuration());
+		return added.compareTo(LocalDateTime.now()) < 0 ;
+
+	}
+	
+	public void deleteItem(UUID uuid, Long id) {
+		DataHolder pHolder = dataManager.getDataHolder(uuid);
 		Data data = pHolder.getData(id);
 
 		if (data instanceof ItemData) {
-			ItemData itemData = (ItemData) data;
-			player.getInventory().addItem(itemData.getItem());
-			deleteItem(player, id);
-
+			pHolder.removeData(id);
+			ItemDataSQL.getInstance().delete((ItemData) data);
 		}
-	}
-
-	public void deleteItem(Player player, Long id) {
-		DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
-		ItemData itemData = (ItemData) pHolder.getData(id);
-		pHolder.removeData(id);
-		ItemDataSQL.getInstance().delete(itemData);
 	}
 
 	public void sendItem(Player recipient, ItemStack itemstack) {
 		if (recipient != null) {
 			Data data = new DataFactory(recipient.getUniqueId(), recipient.getName(), "object hard code"); //TODO parametrize author
-			ItemData itemData = new ItemData(data, itemstack, Duration.ofSeconds(60));// TODO parametrize duration sur les items
+			ItemData itemData = new ItemData(data, itemstack, Duration.ofSeconds(20));// TODO parametrize duration sur les items
 			ItemDataSQL.getInstance().create(itemData);
 			
 			DataHolder pHolder = getDataManager().getDataHolder(recipient.getUniqueId());

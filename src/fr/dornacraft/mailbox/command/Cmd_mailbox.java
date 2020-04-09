@@ -9,8 +9,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import fr.dornacraft.mailbox.DataManager.DataHolder;
+import fr.dornacraft.mailbox.DataManager.DataManager;
 import fr.dornacraft.mailbox.DataManager.ItemData;
+import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
+import fr.dornacraft.mailbox.inventory.providers.MailBoxProvider;
 import fr.dornacraft.mailbox.sql.ItemDataSQL;
 
 public class Cmd_mailbox implements CommandExecutor {
@@ -20,33 +23,53 @@ public class Cmd_mailbox implements CommandExecutor {
 
 		Player player = (Player) sender;
 
-		if (args.length >= 1) {
+		if (args.length > 0) {
+			DataManager manager = MailBoxController.getInstance().getDataManager();
+			DataHolder holder = manager.getDataHolder(player.getUniqueId());
+			
 			if (args[0].equalsIgnoreCase("item") && args.length == 2) {
 				if (args[1].equalsIgnoreCase("send")) {
-					MailBoxController.getInstance().sendItem(player, player.getInventory().getItemInHand());
+					MailBoxController.getInstance().sendItem(player, player.getInventory().getItemInMainHand());
 
 				} else if (args[1].equalsIgnoreCase("getall")) {
-					DataHolder holder = MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId());
-					List<ItemData> list = MailBoxController.getInstance().getDataManager().getTypeData(holder, ItemData.class);
+					
+					List<ItemData> list = manager.getTypeData(holder, ItemData.class);
 					Iterator<ItemData> it = list.iterator();
 					
 					while(it.hasNext() ) {
 						ItemData id = it.next();
-						if(ItemDataSQL.compareToNow(id.getCreationDate(), id.getDuration()) < 0) {
+						if(MailBoxController.getInstance().isOutOfDate(id)) {
 							ItemDataSQL.getInstance().delete(id);
-							holder.removeData(id.getId());
+							MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId()).removeData(id.getId());
 							player.sendMessage("un objet a ete supprimer car il été périmé.");
 							
 						} else {
 							player.getInventory().addItem(id.getItem());
-							player.sendMessage("vous avez recuperer " + list.size() + " de la database.");
+							player.sendMessage("vous avez recuperer " + manager.getTypeData(holder, LetterData.class)+ " de la database.");
 						}
 					}
 
 				}
-			} else if (args.length == 1 && args[0].equalsIgnoreCase("letter")) {
-				MailBoxController.getInstance().sendLetter(player, player.getInventory().getItemInHand() );
+			} else if (args[0].equalsIgnoreCase("letter")) {
+				if(args.length == 2) {
+					if(args[1].equalsIgnoreCase("send")) {
+						MailBoxController.getInstance().sendLetter(player, player.getInventory().getItemInMainHand() );
+						
+					} else if (args[1].equalsIgnoreCase("size")) {
+						String msg = "Vous avez " + manager.getTypeData(holder, LetterData.class).size() + " lettres dans votre boite";
+						player.sendMessage(msg);
+						
+					}
+					
+
+					
+				}
+
 			}
+		} else {
+			
+			MailBoxProvider.getBuilder(player.getUniqueId()).build().open(player);
+			
 		}
 		return false;
 

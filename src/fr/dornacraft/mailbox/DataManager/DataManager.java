@@ -27,7 +27,7 @@ public class DataManager {
 	public Map<UUID, DataHolder> getCache() {//ajout par rapport au diagrame de class
 		return map;
 	}
-
+	
 	public <T extends Data> List<T> getTypeData(DataHolder dataHolder, Class<T> c) {
 		List<T> res = new ArrayList<>();
 
@@ -50,6 +50,14 @@ public class DataManager {
 			}
 
 		}
+	}
+	
+	public List<Data> sort(List<Data> list) {
+		List<Data> res = new ArrayList<>();
+		
+		
+		
+		return res;
 	}
 
 }

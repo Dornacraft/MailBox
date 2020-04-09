@@ -1,5 +1,6 @@
 name: MailBox
 version: 0.1a
+depend: [DevToolsLib]
 description: envoyer et recevoir des messages et des objets
 author: Bletrazer
 api-version: 1.13
