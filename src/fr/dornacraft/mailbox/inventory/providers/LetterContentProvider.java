@@ -4,12 +4,10 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.ItemStack;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
@@ -46,7 +44,8 @@ public class LetterContentProvider implements InventoryProvider {
 	public static Material DATE_SORT_MATERIAL = Material.REPEATER;
 	
 	//primary
-	private UUID dataSource;
+	private DataHolder dataSource;
+	private List<LetterData> letterList = new ArrayList<>();
 	
 	//secondary
 	private LetterType filterType = null;
@@ -58,33 +57,46 @@ public class LetterContentProvider implements InventoryProvider {
 	private DataManager manager = MailBoxController.getInstance().getDataManager();
 	
 	//builder
-	private LetterContentProvider(UUID dataSource) {
-		this.setDataSource(dataSource);
+	private LetterContentProvider(DataHolder dataSource) {
+		this.dataSource = dataSource;
 		
 	}
-	
-	private List<LetterData> filterByType(List<LetterData> dataList, LetterType type){
-		List<LetterData> res = new ArrayList<>();
+
+	@Override
+	public void init(Player player, InventoryContents contents) {
+		Pagination pagination = contents.pagination();
+		pagination.setItemsPerPage(27);
 		
-		for(LetterData letterData : dataList) {
-			if(letterData.getLetterType() == type) {
-				res.add(letterData);
-			}
+		//CONTENT
+		this.dynamicContent(player, contents);
+
+		contents.fillRow(3, ClickableItem.empty(new ItemStackBuilder(inventoryHandler.BORDER_MATERIAL).setName(" ").build()) );
+		
+		//FOOT
+		if (!pagination.isFirst()) {
+			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents) );
 		}
 		
+		if (!pagination.isLast()) {
+			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents) );
+		}
 		
-		return res;
+		contents.set(4, 8, inventoryHandler.getGoBackItem(player, contents));
+	}
+
+	@Override
+	public void update(Player player, InventoryContents contents) {
+		this.dynamicContent(player, contents);
 	}
 	
 	private void dynamicContent(Player player, InventoryContents contents) {
-		DataHolder holder = manager.getDataHolder(player.getUniqueId());
-		List<LetterData> letterList = manager.getTypeData(holder, LetterData.class);
+		List<LetterData> letterList = manager.getTypeData(this.dataSource, LetterData.class);
 		
 		if(this.getFilterType() != null) {
 			letterList = filterByType(letterList, this.getFilterType());
 		}
 		
-		if(isSortingByDecreasingDate ) {
+		if(this.isSortingByDecreasingDate ) {
 			letterList.sort(compareByAscendingDate().reversed());
 			
 		} else {
@@ -93,24 +105,21 @@ public class LetterContentProvider implements InventoryProvider {
 		
 		ClickableItem[] clickableItems = new ClickableItem[letterList.size()];
 		
-		for(Integer index = 0; index < letterList.size(); index ++ ) {
+		for(Integer index = 0; index < letterList.size(); index ++) {//TODO filters compatible with other filters
 			LetterData tempData = letterList.get(index);
 			
 			clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData),
 					e -> {
 						ClickType clickType = e.getClick();
 						ItemStack cursor = e.getCurrentItem();
-						InventoryAction action = e.getAction();
-						System.out.println(action.name());
 						
-						if (clickType == ClickType.LEFT ) {//lecture dans le chat
-							if(cursor.getType() == Material.WRITTEN_BOOK) {
+						if (clickType == ClickType.LEFT ) {
+							if(cursor != null && cursor.getType() == Material.WRITTEN_BOOK) {
 								System.out.println("OK");
 								
-							} else if(cursor.getType() == Material.AIR) {
-								MailBoxController.getInstance().readLetter(player, tempData.getId());
-								
-							} else {
+							} else {//lecture dans le chat
+								MailBoxController.getInstance().readLetter(player, tempData);
+								player.closeInventory();
 								
 							}
 							
@@ -122,7 +131,7 @@ public class LetterContentProvider implements InventoryProvider {
 							LetterDataSQL.getInstance().update(tempData);
 							
 						} else if(clickType == ClickType.CONTROL_DROP) {//supprimer
-							Builder builder = DeletionContentProvider.getBuilder(this.getDataSource(), tempData);
+							Builder builder = DeletionContentProvider.getBuilder(this.dataSource, tempData);
 							builder.parent(contents.inventory());
 							SmartInventory deletionInventory = builder.build();
 							deletionInventory.open(player);
@@ -137,9 +146,10 @@ public class LetterContentProvider implements InventoryProvider {
 		pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
 		contents.set(4, 3, generateCycleFilters() );
 		contents.set(4, 5, generateSortByDateItem() );
-		contents.set(4, 6, generateNonReadLettersItem(player, filterLetterByReadState(manager.getTypeData(holder, LetterData.class), false)) );
+		contents.set(4, 6, generateNonReadLettersItem(player, filterLetterByReadState(manager.getTypeData(this.dataSource, LetterData.class), false)) );
 	}
 	
+	//generate items
 	private ClickableItem generateNonReadLettersItem(Player player, List<LetterData> dataList) {
 		ItemStack itemStack = new ItemStackBuilder(NON_READ_LETTERS_MATERIAL).setName(String.format("§eVous avez %s lettres non lues", dataList.size() ))
 				.addLore("clique pour toutes les")
@@ -179,11 +189,11 @@ public class LetterContentProvider implements InventoryProvider {
 				.addLore("droit / gauche: choisir filtre")
 				.addLore("Drop pour supprimer le filtre");
 		
-		if (this.getLetterTypeIndex() < 0) {
+		if (this.letterTypeIndex < 0) {
 			this.setFilterType(null);
 			
 		} else {
-			this.setFilterType(LetterType.values()[this.getLetterTypeIndex()]);
+			this.setFilterType(LetterType.values()[this.letterTypeIndex]);
 		}
 		
 		String filter = this.getFilterType() == null ? "aucun" : this.getFilterType().name().toLowerCase();
@@ -197,6 +207,7 @@ public class LetterContentProvider implements InventoryProvider {
 				
 			} else if (click == ClickType.LEFT) {
 				this.cycleAddIndex(false);
+				
 			} else if (click == ClickType.DROP) {
 				this.setLetterTypeIndex(-1);
 			}
@@ -204,8 +215,50 @@ public class LetterContentProvider implements InventoryProvider {
 		
 	}
 	
+	//sorters
+	private Comparator<Data> compareByAscendingDate(){
+		return new Comparator<Data>() {
+
+			@Override
+			public int compare(Data data1, Data data2) {
+				Timestamp date1 = data1.getCreationDate();
+				Timestamp date2 = data2.getCreationDate();
+				
+				return date1.compareTo(date2);
+			}
+		};
+	}
+	
+	//filters
+	private List<LetterData> filterByType(List<LetterData> dataList, LetterType type){
+		List<LetterData> res = new ArrayList<>();
+		
+		for(LetterData letterData : dataList) {
+			if(letterData.getLetterType() == type) {
+				res.add(letterData);
+			}
+		}
+		
+		
+		return res;
+	}
+	
+	private List<LetterData> filterLetterByReadState(List<LetterData> dataList, Boolean isRead){
+		List<LetterData> res = new ArrayList<>();
+		
+		for(LetterData letterData : dataList) {
+			if(letterData.getIsRead().equals(isRead)) {
+				res.add(letterData);
+			}
+		}
+		
+		
+		return res;
+	}
+	
+	//manipulation
 	private void cycleAddIndex(Boolean b) {
-		Integer index = this.getLetterTypeIndex();
+		Integer index = this.letterTypeIndex;
 		Integer minIndex = -1;
 		Integer maxIndex = LetterType.values().length -1;
 		
@@ -228,77 +281,16 @@ public class LetterContentProvider implements InventoryProvider {
 		
 	}
 	
-	private Comparator<Data> compareByAscendingDate(){
-		return new Comparator<Data>() {
-
-			@Override
-			public int compare(Data data1, Data data2) {
-				Timestamp date1 = data1.getCreationDate();
-				Timestamp date2 = data2.getCreationDate();
-				
-				return date1.compareTo(date2);
-			}
-		};
-	}
-	
-	private List<LetterData> filterLetterByReadState(List<LetterData> dataList, Boolean isRead){
-		List<LetterData> res = new ArrayList<>();
-		
-		for(LetterData letterData : dataList) {
-			if(letterData.getIsRead().equals(isRead)) {
-				res.add(letterData);
-			}
-		}
-		
-		
-		return res;
-	}
-
-	@Override
-	public void init(Player player, InventoryContents contents) {
-		Pagination pagination = contents.pagination();
-		pagination.setItemsPerPage(27);
-		
-		//CONTENT
-		this.dynamicContent(player, contents);
-
-		contents.fillRow(3, ClickableItem.empty(new ItemStackBuilder(inventoryHandler.BORDER_MATERIAL).setName(" ").build()) );
-		
-		//FOOT
-		if (!pagination.isFirst()) {
-			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents) );
-		}
-		
-		if (!pagination.isLast()) {
-			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents) );
-		}
-		
-		contents.set(4, 8, inventoryHandler.getGoBackItem(player, contents));
-	}
-
-	@Override
-	public void update(Player player, InventoryContents contents) {
-		this.dynamicContent(player, contents);
-	}
-
-
-	private UUID getDataSource() {
-		return dataSource;
-	}
-
-
-	private void setDataSource(UUID dataSource) {
-		this.dataSource = dataSource;
-	}
-	
-	public static Builder getBuilder(UUID dataSource) {
+	//static
+	public static Builder getBuilder(DataHolder dataSource) {
 		return Main.getBuilder()
 		        .id("MailBox_Letters")
 		        .provider(new LetterContentProvider(dataSource))
 		        .size(5, 9)
-		        .title("§7§lMenu des lettres");
+		        .title("§lMenu des lettres");
 	}
-
+	
+	// getters setters
 	public LetterType getFilterType() {
 		return filterType;
 	}
@@ -307,12 +299,16 @@ public class LetterContentProvider implements InventoryProvider {
 		this.filterType = filterType;
 	}
 
-	public Integer getLetterTypeIndex() {
-		return letterTypeIndex;
-	}
-
 	public void setLetterTypeIndex(Integer letterTypeIndex) {
 		this.letterTypeIndex = letterTypeIndex;
+	}
+
+	public List<LetterData> getLetterList() {
+		return letterList;
+	}
+
+	public void setLetterList(List<LetterData> letterList) {
+		this.letterList = letterList;
 	}
 	
 }

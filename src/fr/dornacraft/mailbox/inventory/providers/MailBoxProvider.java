@@ -1,7 +1,5 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
-import java.util.UUID;
-
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -12,12 +10,13 @@ import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryProvider;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.Main;
+import fr.dornacraft.mailbox.DataManager.DataHolder;
 
 public class MailBoxProvider implements InventoryProvider {
 	
-	private UUID dataSource;
+	private DataHolder dataSource;
 	
-	public MailBoxProvider(UUID dataSource) {
+	public MailBoxProvider(DataHolder dataSource) {
 		this.setDataSource(dataSource);
 	}
 
@@ -52,15 +51,15 @@ public class MailBoxProvider implements InventoryProvider {
 		
 	}
 
-	private UUID getDataSource() {
+	private DataHolder getDataSource() {
 		return dataSource;
 	}
 
-	private void setDataSource(UUID dataSource) {
+	private void setDataSource(DataHolder dataSource) {
 		this.dataSource = dataSource;
 	}
 	
-	public static Builder getBuilder(UUID dataSource) {
+	public static Builder getBuilder(DataHolder dataSource) {
 		return Main.getBuilder()
 		        .id("MailBox_Principal")
 		        .provider(new MailBoxProvider(dataSource))

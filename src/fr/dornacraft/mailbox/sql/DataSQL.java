@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.bukkit.entity.Player;
-
 import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.DataFactory;
 
@@ -45,22 +43,22 @@ public class DataSQL extends DAO<Data> {
 	 * 
 	 */
 	
-	public List<Data> getDataList(Player player){//TODO change parameter to UUID
+	public List<Data> getDataList(UUID uuid){
 		List<Data> res = new ArrayList<>();
 		
 		try {
 			PreparedStatement query = getConnection().prepareStatement("SELECT * FROM " + TABLE_NAME + " WHERE uuid = ?");
-			query.setString(1, player.getUniqueId().toString());
+			query.setString(1, uuid.toString());
 			ResultSet rs = query.executeQuery();
 			
 			while (rs.next()) {
-				Long id = rs.getLong("id");
-				UUID uuid = UUID.fromString(rs.getString("uuid"));
-				String author = rs.getString("author");
-				String object = rs.getString("object");
-				Timestamp creationDate = rs.getTimestamp("creationDate");
+				Long tempId = rs.getLong("id");
+				UUID tempUuid = UUID.fromString(rs.getString("uuid"));
+				String tempAuthor = rs.getString("author");
+				String tempObject = rs.getString("object");
+				Timestamp tempCreationDate = rs.getTimestamp("creationDate");
 				
-				Data tempData = new DataFactory(id, uuid, author, object, creationDate);
+				Data tempData = new DataFactory(tempId, tempUuid, tempAuthor, tempObject, tempCreationDate);
 				res.add(tempData );
 			}
 			

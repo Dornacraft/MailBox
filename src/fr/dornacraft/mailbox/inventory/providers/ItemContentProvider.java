@@ -1,7 +1,6 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -23,16 +22,17 @@ import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 
 public class ItemContentProvider implements  InventoryProvider {
 	
-	private UUID dataSource;
+	private DataHolder dataSource;
 	
-	public ItemContentProvider(UUID dataSource) {
+	private MailBoxInventoryHandler inventoryHandler = MailBoxInventoryHandler.getInstance();
+	private DataManager dataManager = MailBoxController.getInstance().getDataManager();
+	
+	public ItemContentProvider(DataHolder dataSource) {
 		this.setDataSource(dataSource);
 	}
 	
 	private void fillContents(Player player, InventoryContents contents) {
-		DataManager dataManager = MailBoxController.getInstance().getDataManager();
-		DataHolder holder = dataManager.getDataHolder(this.getDataSource());
-		List<ItemData> itemList = dataManager.getTypeData(holder, ItemData.class);
+		List<ItemData> itemList = dataManager.getTypeData(this.getDataSource(), ItemData.class);
 		
 		ClickableItem[] clickableItems = new ClickableItem[itemList.size()];
 		
@@ -43,7 +43,7 @@ public class ItemContentProvider implements  InventoryProvider {
 				MailBoxController.getInstance().deleteItem(this.getDataSource(), tempData.getId());
 				
 			} else {
-				clickableItems[index] = ClickableItem.of(MailBoxInventoryHandler.getInstance().generateItemRepresentation(tempData),
+				clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData),
 						e -> {
 							ClickType clickType = e.getClick();
 							if(clickType == ClickType.LEFT && player.getUniqueId().equals(this.getDataSource())) {//l'inventaire appartien au joueur en parametre
@@ -94,20 +94,20 @@ public class ItemContentProvider implements  InventoryProvider {
 		fillContents(player, contents);		
 	}
 
-	public UUID getDataSource() {
+	public DataHolder getDataSource() {
 		return dataSource;
 	}
 
-	public void setDataSource(UUID dataSource) {
+	public void setDataSource(DataHolder dataSource) {
 		this.dataSource = dataSource;
 	}
 	
-	public static Builder getBuilder(UUID dataSource) {
+	public static Builder getBuilder(DataHolder dataSource) {
 		return Main.getBuilder()
 		        .id("MailBox_Items")
 		        .provider(new ItemContentProvider(dataSource))
 		        .size(5, 9)
-		        .title("§7§lMenu des objets");
+		        .title("§lMenu des objets");
 	}
 
 }

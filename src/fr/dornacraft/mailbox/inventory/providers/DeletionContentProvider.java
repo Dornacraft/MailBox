@@ -1,7 +1,5 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
-import java.util.UUID;
-
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -12,6 +10,7 @@ import fr.dornacraft.devtoolslib.smartinvs.content.InventoryProvider;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.Main;
 import fr.dornacraft.mailbox.DataManager.Data;
+import fr.dornacraft.mailbox.DataManager.DataHolder;
 import fr.dornacraft.mailbox.DataManager.ItemData;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
@@ -22,7 +21,7 @@ public class DeletionContentProvider implements InventoryProvider {
 	public static Material ANNULATION_MATERIAL = Material.GREEN_TERRACOTTA;
 	private Data data;
 	
-	public DeletionContentProvider(UUID dataSource, Data data) {
+	public DeletionContentProvider(Data data) {
 		this.setData(data);
 
 	}
@@ -62,7 +61,7 @@ public class DeletionContentProvider implements InventoryProvider {
 		}		
 	}
 	
-	public static Builder getBuilder(UUID dataSource, Data data) {
+	public static Builder getBuilder(DataHolder dataSource, Data data) {
 		String formatTitle = "§4§lSupprimer %s?";
 		String title = "";
 		
@@ -76,7 +75,7 @@ public class DeletionContentProvider implements InventoryProvider {
 		
 		return Main.getBuilder()
 		        .id("customInventory")
-		        .provider(new DeletionContentProvider(dataSource, data))
+		        .provider(new DeletionContentProvider(data))
 		        .size(3, 9)
 		        .title(title);
 	}

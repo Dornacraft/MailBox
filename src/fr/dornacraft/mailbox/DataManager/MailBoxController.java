@@ -33,9 +33,9 @@ public class MailBoxController {
 	 * @param player joueyur cible
 	 * @return un DataHolder avec les données du joueur cible trouvés directement depuis la base de donnée.
 	 */
-	public DataHolder getHolderFromDataBase(Player player) {// ajout par rapport au diagramme
+	public DataHolder getHolderFromDataBase(UUID uuid) {// ajout par rapport au diagramme
 		DataHolder res = new DataHolder(new ArrayList<>());
-		List<Data> dataList = DataSQL.getInstance().getDataList(player);
+		List<Data> dataList = DataSQL.getInstance().getDataList(uuid);
 
 		for (Data data : dataList) {
 			ItemData itemData = ItemDataSQL.getInstance().find(data.getId());
@@ -55,8 +55,21 @@ public class MailBoxController {
 	// utile lors des reload
 	public void initialize() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			dataManager.getCache().put(player.getUniqueId(), getHolderFromDataBase(player));
+			dataManager.getCache().put(player.getUniqueId(), getHolderFromDataBase(player.getUniqueId()));
 		}
+	}
+	
+	/**
+	 * trouve le dataHolder associé a l'uuid donnée
+	 */
+	public DataHolder getDataHolder(UUID uuid) {
+		DataHolder res = dataManager.getDataHolder(uuid);
+		
+		if(res == null) {
+			res = getHolderFromDataBase(uuid);
+		}
+		
+		return res;
 	}
 
 	public void sendLetter(Player recipient, ItemStack book) { //FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
@@ -92,8 +105,7 @@ public class MailBoxController {
 	 * @param player joueur cible
 	 * @param id l iD de la lettre a afficher dans le chat
 	 */
-	public void readLetter(Player player, Long id) {
-		LetterData letterData = (LetterData) MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId()).getData(id);
+	public void readLetter(Player player, LetterData letterData) {
 		StringBuilder letter = new StringBuilder();
 		letter.append("\n");
 		letter.append(String.format("§e§lAuteur(e):§r %s\n", letterData.getAuthor()));
@@ -130,7 +142,7 @@ public class MailBoxController {
 		Data data = pHolder.getData(id);
 		
 		if(data instanceof ItemData) {
-			MailBoxController.getInstance().deleteItem(player.getUniqueId(), data.getId());
+			MailBoxController.getInstance().deleteItem(pHolder, data.getId());
 			
 		} else if (data instanceof LetterData) {
 			MailBoxController.getInstance().deleteLetter(player, data.getId());
@@ -150,7 +162,7 @@ public class MailBoxController {
 			if (data instanceof ItemData) {
 				ItemData itemData = (ItemData) data;
 				player.getInventory().addItem(itemData.getItem());
-				deleteItem(player.getUniqueId(), id);
+				deleteItem(pHolder, id);
 	
 			}
 		} else {
@@ -166,12 +178,11 @@ public class MailBoxController {
 
 	}
 	
-	public void deleteItem(UUID uuid, Long id) {
-		DataHolder pHolder = dataManager.getDataHolder(uuid);
-		Data data = pHolder.getData(id);
+	public void deleteItem(DataHolder holder, Long id) {
+		Data data = holder.getData(id);
 
 		if (data instanceof ItemData) {
-			pHolder.removeData(id);
+			holder.removeData(id);
 			ItemDataSQL.getInstance().delete((ItemData) data);
 		}
 	}
