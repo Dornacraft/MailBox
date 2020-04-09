@@ -1,7 +1,10 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
+import java.util.List;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
@@ -19,34 +22,59 @@ import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 public class DeletionContentProvider implements InventoryProvider {
 	public static Material CONFIRMATION_MATERIAL = Material.RED_TERRACOTTA;
 	public static Material ANNULATION_MATERIAL = Material.GREEN_TERRACOTTA;
+	private DataHolder holder;
 	private Data data;
+	private List<? extends Data> dataList;
 	
-	public DeletionContentProvider(Data data) {
+	public DeletionContentProvider(DataHolder dataSource, Data data) {
 		this.setData(data);
+		this.setHolder(dataSource);
+
+	}
+	
+	public DeletionContentProvider(DataHolder dataSource, List<? extends Data> dataList) {
+		this.setHolder(dataSource);
+		this.setDataList(dataList);
 
 	}
 
-	private Data getData() {
+	public Data getData() {
 		return data;
 	}
 
-	private void setData(Data data) {
+	public void setData(Data data) {
 		this.data = data;
 	}
 
 	@Override
 	public void init(Player player, InventoryContents contents) {
-		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(ANNULATION_MATERIAL).setName("§f§lAnnuler").build(), MailBoxInventoryHandler.getInstance().getGoBackListener(player, contents)) );
+		contents.set(1, 2, MailBoxInventoryHandler.getInstance().getGoBackItem(player, contents) );
 		
-		contents.set(1, 4, ClickableItem.empty(MailBoxInventoryHandler.getInstance().generateItemRepresentation(this.getData())));
 		
-		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(CONFIRMATION_MATERIAL).setName("§c§lSupprimer").build(), e -> {
+		ItemStack item = null;
+		if(this.getData() != null) {
+			item = MailBoxInventoryHandler.getInstance().generateItemRepresentation(this.getData());
+			
+		} else if(this.getDataList() != null){
+			item =  new ItemStackBuilder(Material.BOOK)
+					.setName("§l§4Vous allez supprimer " + this.getDataList().size() + " objets!")
+					.build();
+		}
+		
+		contents.set(1, 4, ClickableItem.empty(item));
+		
+		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(CONFIRMATION_MATERIAL).setName("§lSupprimer").build(), e -> {
 			if(this.getData() != null) {
-				MailBoxController.getInstance().deleteData(player, this.getData().getId());
+				MailBoxController.getInstance().deleteData(this.getHolder(), this.getData().getId());
 				
+			} else if (this.getDataList() != null) {
+				for(Data data : this.getDataList()) {
+					MailBoxController.getInstance().deleteData(this.getHolder(), data.getId());
+				}
 			}
 			contents.inventory().getParent().get().open(player);
 		}));
+		
 	}
 
 	@Override
@@ -55,13 +83,30 @@ public class DeletionContentProvider implements InventoryProvider {
 			ItemData itemData = (ItemData) this.getData();
 			
 			if(MailBoxController.getInstance().isOutOfDate(itemData)) {
-				//MailBoxController.getInstance().deleteItem(player.getUniqueId(), itemData.getId());
+				MailBoxController.getInstance().deleteItem(this.getHolder(), itemData.getId());
 				contents.inventory().getParent().get().open(player);
 			}
-		}		
+		}
+		
+	}
+
+	public List<? extends Data> getDataList() {
+		return dataList;
+	}
+
+	public void setDataList(List<? extends Data>dataList) {
+		this.dataList = dataList;
+	}
+
+	public DataHolder getHolder() {
+		return holder;
+	}
+
+	public void setHolder(DataHolder holder) {
+		this.holder = holder;
 	}
 	
-	public static Builder getBuilder(DataHolder dataSource, Data data) {
+	public static Builder getBuilder(DataHolder holder, Data data) {
 		String formatTitle = "§4§lSupprimer %s?";
 		String title = "";
 		
@@ -74,8 +119,18 @@ public class DeletionContentProvider implements InventoryProvider {
 		
 		
 		return Main.getBuilder()
-		        .id("customInventory")
-		        .provider(new DeletionContentProvider(data))
+		        .id("MailBox_Deletion")
+		        .provider(new DeletionContentProvider(holder, data))
+		        .size(3, 9)
+		        .title(title);
+	}
+	
+	public static Builder getBuilder(DataHolder holder, List<? extends Data> dataList) {
+		String title = String.format("§4§lSupprimer les %s objets?", dataList.size());
+		
+		return Main.getBuilder()
+		        .id("MailBox_Deletion")
+		        .provider(new DeletionContentProvider(holder, dataList))
 		        .size(3, 9)
 		        .title(title);
 	}

@@ -126,26 +126,24 @@ public class MailBoxController {
 		LetterDataSQL.getInstance().update(letterData);
 	}
 
-	public void deleteLetter(Player player, Long id) {
-		DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
-		Data data = pHolder.getData(id);
+	public void deleteLetter(DataHolder holder, Long id) {
+		Data data = holder.getData(id);
 
 		if (data instanceof LetterData) {
-			pHolder.removeData(id);
+			holder.removeData(id);
 			LetterDataSQL.getInstance().delete((LetterData) data);
 		}
 
 	}
 	
-	public void deleteData(Player player, Long id) {
-		DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
-		Data data = pHolder.getData(id);
+	public void deleteData(DataHolder holder, Long id) {
+		Data data = holder.getData(id);
 		
 		if(data instanceof ItemData) {
-			MailBoxController.getInstance().deleteItem(pHolder, data.getId());
+			MailBoxController.getInstance().deleteItem(holder, data.getId());
 			
 		} else if (data instanceof LetterData) {
-			MailBoxController.getInstance().deleteLetter(player, data.getId());
+			MailBoxController.getInstance().deleteLetter(holder, data.getId());
 		}
 	}
 

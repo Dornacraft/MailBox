@@ -36,16 +36,13 @@ public class LetterContentProvider implements InventoryProvider {
 	public static Material ANNOUNCE_LETTER_MATERIAL = Material.FILLED_MAP;
 	public static Material NO_LETTER_TYPE_MATERIAL = Material.GLASS;
 	
-	public static Material MARK_AS_READ = Material.GLASS;
 	public static Material NON_READ_LETTERS_MATERIAL = Material.BELL;
-	
-	public static Material PLAYER_FILTER_MATERIAL = Material.HOPPER;
-	public static Material LETTER_NO_FILTER_MATERIAL = Material.PUMPKIN_PIE;
+	public static Material PLAYER_FILTER_MATERIAL = Material.PLAYER_HEAD;
 	public static Material DATE_SORT_MATERIAL = Material.REPEATER;
+	public static Material DELETE_ALL_MATERIAL = Material.BARRIER;
 	
 	//primary
 	private DataHolder dataSource;
-	private List<LetterData> letterList = new ArrayList<>();
 	
 	//secondary
 	private LetterType filterType = null;
@@ -76,6 +73,14 @@ public class LetterContentProvider implements InventoryProvider {
 		if (!pagination.isFirst()) {
 			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents) );
 		}
+		
+		contents.set(4,  4, ClickableItem.of(new ItemStackBuilder(DELETE_ALL_MATERIAL).setName("§4§lVider la boite").build(), e -> {
+			List<LetterData> dataList = manager.getTypeData(this.dataSource, LetterData.class);
+			Builder builder = DeletionContentProvider.getBuilder(this.dataSource, dataList );
+			builder.parent(contents.inventory());
+			SmartInventory deletionInventory = builder.build();
+			deletionInventory.open(player);
+		}));
 		
 		if (!pagination.isLast()) {
 			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents) );
@@ -301,14 +306,6 @@ public class LetterContentProvider implements InventoryProvider {
 
 	public void setLetterTypeIndex(Integer letterTypeIndex) {
 		this.letterTypeIndex = letterTypeIndex;
-	}
-
-	public List<LetterData> getLetterList() {
-		return letterList;
-	}
-
-	public void setLetterList(List<LetterData> letterList) {
-		this.letterList = letterList;
 	}
 	
 }
