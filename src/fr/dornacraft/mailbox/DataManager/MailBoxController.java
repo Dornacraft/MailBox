@@ -33,8 +33,8 @@ public class MailBoxController {
 	 * @param player joueyur cible
 	 * @return un DataHolder avec les données du joueur cible trouvés directement depuis la base de donnée.
 	 */
-	public DataHolder getHolderFromDataBase(UUID uuid) {// ajout par rapport au diagramme
-		DataHolder res = new DataHolder(new ArrayList<>());
+	private DataHolder getHolderFromDataBase(UUID uuid) {// ajout par rapport au diagramme
+		DataHolder res = new DataHolder(uuid, new ArrayList<>());
 		List<Data> dataList = DataSQL.getInstance().getDataList(uuid);
 
 		for (Data data : dataList) {
@@ -51,11 +51,16 @@ public class MailBoxController {
 
 		return res;
 	}
-
+	
+	//charge en mémoire les donée de associé a l'uuid en parametre
+	public void load(UUID uuid) {
+		dataManager.getCache().put(uuid, getHolderFromDataBase(uuid) );
+	}
+	
 	// utile lors des reload
 	public void initialize() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			dataManager.getCache().put(player.getUniqueId(), getHolderFromDataBase(player.getUniqueId()));
+			load(player.getUniqueId());
 		}
 	}
 	
@@ -151,7 +156,8 @@ public class MailBoxController {
 		dataManager.purgeData(dataManager.getDataHolder(player.getUniqueId()), LetterData.class);
 	}
 
-	public void recoverItem(Player player, Long id) {
+	public Boolean recoverItem(Player player, Long id) {
+		Boolean success = false;
 		
 		if(player.getInventory().firstEmpty() != -1) {
 			DataHolder pHolder = dataManager.getDataHolder(player.getUniqueId());
@@ -161,11 +167,12 @@ public class MailBoxController {
 				ItemData itemData = (ItemData) data;
 				player.getInventory().addItem(itemData.getItem());
 				deleteItem(pHolder, id);
+				success = true;
 	
 			}
-		} else {
-			//TODO playsound ?
 		}
+		
+		return success;
 	}
 	
 	public Boolean isOutOfDate(ItemData itemData) {
@@ -179,7 +186,7 @@ public class MailBoxController {
 	public void deleteItem(DataHolder holder, Long id) {
 		Data data = holder.getData(id);
 
-		if (data instanceof ItemData) {
+		if (data != null && data instanceof ItemData) {
 			holder.removeData(id);
 			ItemDataSQL.getInstance().delete((ItemData) data);
 		}
@@ -193,7 +200,7 @@ public class MailBoxController {
 			
 			DataHolder pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
 			if(pHolder == null) {
-				getDataManager().getCache().put(recipient.getUniqueId(), new DataHolder(new ArrayList<Data>()));
+				getDataManager().getCache().put(recipient.getUniqueId(), new DataHolder(recipient.getUniqueId(), new ArrayList<Data>()));
 				pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
 			}
 			

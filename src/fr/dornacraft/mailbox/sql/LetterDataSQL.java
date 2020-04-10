@@ -13,9 +13,13 @@ import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.LetterType;
 
 public class LetterDataSQL extends DAO<LetterData> {
-
 	private static final String TABLE_NAME = "MailBox_LetterData";
+	private static LetterDataSQL INSTANCE = new LetterDataSQL();
 
+	public static LetterDataSQL getInstance() {
+		return INSTANCE;
+	}
+	
 	private LetterDataSQL() {
 		super();
 
@@ -29,14 +33,11 @@ public class LetterDataSQL extends DAO<LetterData> {
 			System.out.println(e);
 		}
 	}
-
-	private static LetterDataSQL INSTANCE = new LetterDataSQL();
-
-	public static LetterDataSQL getInstance() {
-		return INSTANCE;
-	}
-
-	private String toSQLData(List<String> list) {
+	
+	/**
+	 * Transforme une liste de string en string unique et les sépare par un "\n"
+	 */
+	private String toText(List<String> list) {
 		StringBuilder sb = new StringBuilder();
 
 		for (String page : list) {
@@ -45,14 +46,17 @@ public class LetterDataSQL extends DAO<LetterData> {
 
 		return sb.toString();
 	}
-
-	private List<String> contentFromSQLData(String str) {
+	
+	/**
+	 * Transforme un String en List en utilisant "\n" comme séparateur
+	 */
+	private List<String> fromText(String str) {
 		return Arrays.asList(StringUtils.split(str, "\n"));
 	}
 
 	/*
-	 * table format ?: - [id: int] [type: String(LetterType name)] [content: String]
-	 * [isRead: Boolean]
+	 * Format de la table: 
+	 * [id: int] [type: String(LetterType name)] [content: String] [isRead: Boolean]
 	 * 
 	 */
 
@@ -67,7 +71,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 			PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " VALUES(?, ?, ?, ?)");
 			query.setLong(1, obj.getId());
 			query.setString(2, obj.getLetterType().name());
-			query.setString(3, toSQLData(obj.getContent()));
+			query.setString(3, toText(obj.getContent()));
 			query.setBoolean(4, obj.getIsRead());
 
 			query.execute();
@@ -100,7 +104,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 			if (resultset.next()) {
 				Data data = DataSQL.getInstance().find(i);
 				LetterType type = LetterType.valueOf(resultset.getString("type"));
-				List<String> content = contentFromSQLData(resultset.getString("content"));
+				List<String> content = fromText(resultset.getString("content"));
 				Boolean isRead = resultset.getBoolean("isRead");
 
 				if (data != null) {
@@ -125,7 +129,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 			DataSQL.getInstance().update(obj);
 			PreparedStatement query = super.getConnection()
 					.prepareStatement("UPDATE " + TABLE_NAME + " SET content = ?, type = ?, isRead = ? WHERE id = ?");
-			query.setString(1, toSQLData(obj.getContent()));
+			query.setString(1, toText(obj.getContent()));
 			query.setString(2, obj.getLetterType().name());
 			query.setBoolean(3, obj.getIsRead());
 			query.setLong(4, obj.getId());

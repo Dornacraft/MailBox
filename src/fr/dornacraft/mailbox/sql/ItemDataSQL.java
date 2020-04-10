@@ -17,8 +17,12 @@ import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.ItemData;
 
 public class ItemDataSQL extends DAO<ItemData>{
-	
 	private static final String TABLE_NAME = "MailBox_ItemData";
+	private static ItemDataSQL INSTANCE = new ItemDataSQL();
+	
+	public static ItemDataSQL getInstance() {
+		return INSTANCE;
+	}
 	
 	private ItemDataSQL() {
 		super();
@@ -35,6 +39,9 @@ public class ItemDataSQL extends DAO<ItemData>{
 		
 	}
 	
+	/**
+	 * Tente de transformer un ItemStack en String
+	 */
 	private String toBase64(ItemStack itemstack) {
 		String res = null;
 		try {
@@ -50,11 +57,14 @@ public class ItemDataSQL extends DAO<ItemData>{
 
 		return res;
 	}
-
-	private ItemStack fromBase64(String data) {
+	
+	/**
+	 * Tente de transformer un String en ItemStack
+	 */
+	private ItemStack fromBase64(String str) {
 		ItemStack res = null;
 		try {
-			ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
+			ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(str));
 			BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
 
 			res = (ItemStack) dataInput.readObject();
@@ -66,12 +76,6 @@ public class ItemDataSQL extends DAO<ItemData>{
 		}
 
 		return res;
-	}
-	
-	private static ItemDataSQL INSTANCE = new ItemDataSQL();
-	
-	public static ItemDataSQL getInstance() {
-		return INSTANCE;
 	}
 	
 	/*

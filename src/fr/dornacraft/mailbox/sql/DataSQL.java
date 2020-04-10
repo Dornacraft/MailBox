@@ -13,6 +13,7 @@ import java.util.UUID;
 import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.DataFactory;
 
+
 public class DataSQL extends DAO<Data> {
 	
 	private static final String TABLE_NAME = "MailBox_Data";
@@ -43,6 +44,9 @@ public class DataSQL extends DAO<Data> {
 	 * 
 	 */
 	
+	/**
+	 * Récupère la liste de Data associé a l'uuid en parametre
+	 */
 	public List<Data> getDataList(UUID uuid){
 		List<Data> res = new ArrayList<>();
 		

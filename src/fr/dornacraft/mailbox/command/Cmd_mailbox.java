@@ -67,7 +67,6 @@ public class Cmd_mailbox implements CommandExecutor {
 
 			}
 		} else {
-			
 			MailBoxProvider.getBuilder(MailBoxController.getInstance().getDataManager().getDataHolder(player.getUniqueId())).build().open(player);
 			
 		}

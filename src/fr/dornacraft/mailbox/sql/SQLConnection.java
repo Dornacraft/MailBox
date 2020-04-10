@@ -7,7 +7,10 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 
 import fr.dornacraft.mailbox.Main;
-
+/**
+ * Créer et gère la connexion avec la base de donnée (totalement pris de l'ancienne api)
+ *
+ */
 public class SQLConnection {//TODO déplacer cette classe vers l'api
 	public static final String SGBD_TYPE_ROOT = "jdbc:mysql://";
 	private static SQLConnection instance = new SQLConnection();

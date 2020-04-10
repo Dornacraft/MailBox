@@ -6,13 +6,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
-
+/**
+ * Charge en mémoire les données des joueurs lors de leurs connexion
+ * @author Bletrazer
+ *
+ */
 public class JoinListener implements Listener {
 
 	@EventHandler
 	private void onJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		MailBoxController.getInstance().getDataManager().getCache().put(player.getUniqueId(), MailBoxController.getInstance().getHolderFromDataBase(player.getUniqueId()));
+		MailBoxController.getInstance().load(player.getUniqueId());
 
 	}
 

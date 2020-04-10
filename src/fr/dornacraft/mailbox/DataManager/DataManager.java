@@ -1,6 +1,8 @@
 package fr.dornacraft.mailbox.DataManager;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,13 +53,19 @@ public class DataManager {
 
 		}
 	}
-	
-	public List<Data> sort(List<Data> list) {
-		List<Data> res = new ArrayList<>();
-		
-		
-		
-		return res;
-	}
 
+	//Comparators
+	public Comparator<Data> compareByAscendingDate(){
+		return new Comparator<Data>() {
+
+			@Override
+			public int compare(Data data1, Data data2) {
+				Timestamp date1 = data1.getCreationDate();
+				Timestamp date2 = data2.getCreationDate();
+				
+				return date1.compareTo(date2);
+			}
+		};
+	}
+	
 }

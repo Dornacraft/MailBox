@@ -2,6 +2,7 @@ package fr.dornacraft.mailbox.inventory.providers;
 
 import java.util.List;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 
@@ -22,6 +23,9 @@ import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 
 public class ItemContentProvider implements  InventoryProvider {
 	
+	public static Material RULES_MATERIAL = Material.WRITABLE_BOOK;
+	public static Material RECOVER_ALL_MATERIAl = Material.CHEST;
+	
 	private DataHolder dataSource;
 	
 	private MailBoxInventoryHandler inventoryHandler = MailBoxInventoryHandler.getInstance();
@@ -31,26 +35,29 @@ public class ItemContentProvider implements  InventoryProvider {
 		this.setDataSource(dataSource);
 	}
 	
-	private void fillContents(Player player, InventoryContents contents) {
+	private void dynamicContent(Player player, InventoryContents contents) {
 		List<ItemData> itemList = dataManager.getTypeData(this.getDataSource(), ItemData.class);
+		
+		itemList.sort(dataManager.compareByAscendingDate().reversed());
 		
 		ClickableItem[] clickableItems = new ClickableItem[itemList.size()];
 		
 		for(Integer index = 0; index < itemList.size(); index ++ ) {
 			ItemData tempData = itemList.get(index);
+			Long dataId = tempData.getId();
 			
 			if(MailBoxController.getInstance().isOutOfDate(tempData)) {
-				MailBoxController.getInstance().deleteItem(this.getDataSource(), tempData.getId());
+				MailBoxController.getInstance().deleteItem(this.getDataSource(), dataId);
 				
 			} else {
 				clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData),
 						e -> {
 							ClickType clickType = e.getClick();
-							if(clickType == ClickType.LEFT && player.getUniqueId().equals(this.getDataSource())) {//l'inventaire appartien au joueur en parametre
-								MailBoxController.getInstance().recoverItem(player, tempData.getId());
+							if(clickType == ClickType.LEFT && player.getUniqueId().equals(this.getDataSource().getOwner()) ) {//l'inventaire appartien au joueur en parametre
+								MailBoxController.getInstance().recoverItem(player, dataId);
 								
 							} else if(clickType == ClickType.DROP || clickType == ClickType.CONTROL_DROP) {//TODO ajouter permission
-								Builder builder = DeletionContentProvider.getBuilder(this.getDataSource(), tempData);
+								Builder builder = DeletionDataContentProvider.builder(this.getDataSource(), dataId);
 								builder.parent(contents.inventory());
 								builder.build().open(player);
 								
@@ -71,7 +78,7 @@ public class ItemContentProvider implements  InventoryProvider {
 		Pagination pagination = contents.pagination();
 		pagination.setItemsPerPage(27);
 		
-		this.fillContents(player, contents);
+		this.dynamicContent(player, contents);
 		
 		contents.fillRow(3, ClickableItem.empty(new ItemStackBuilder(MailBoxInventoryHandler.getInstance().BORDER_MATERIAL).setName(" ").build() ) );
 		
@@ -81,17 +88,30 @@ public class ItemContentProvider implements  InventoryProvider {
 			contents.set(4, 1, ClickableItem.of(new ItemStackBuilder(handler.PAGINATION_MATERIAL).setName("Page précédente").build(), e -> inventory.open(player, pagination.previous().getPage())) );
 		}
 		
+		contents.set(4, 3, generateRecoverAll(player, contents) );
+		
 		if(!pagination.isLast()) {
 			contents.set(4, 7, ClickableItem.of(new ItemStackBuilder(handler.PAGINATION_MATERIAL).setName("Page suivante").build(), e -> inventory.open(player, pagination.next().getPage())) );
 		}
-		
 		
 		contents.set(4, 8, MailBoxInventoryHandler.getInstance().getGoBackItem(player, contents) );
 	}
 
 	@Override
 	public void update(Player player, InventoryContents contents) {
-		fillContents(player, contents);		
+		dynamicContent(player, contents);		
+	}
+	
+	private ClickableItem generateRecoverAll(Player player, InventoryContents contents) {
+		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(RECOVER_ALL_MATERIAl).setName("§eTout récupérer.");
+
+		return ClickableItem.of(itemStackBuilder.build(), e -> {
+			for (ItemData itemData : dataManager.getTypeData(this.getDataSource(), ItemData.class)) {
+				if (!MailBoxController.getInstance().recoverItem(player, itemData.getId()) ) {
+					break;
+				}
+			}
+		});
 	}
 
 	public DataHolder getDataSource() {

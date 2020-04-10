@@ -3,12 +3,19 @@ package fr.dornacraft.mailbox.DataManager;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import java.util.UUID;
+/**
+ * Contient les Data des joueurs
+ * @author Bletrazer
+ *
+ */
 public class DataHolder {
-
+	
+	private UUID owner;
 	private List<Data> listData = new ArrayList<>();
 	
-	public DataHolder(List<Data> dataList) {
+	public DataHolder(UUID owner, List<Data> dataList) {
+		this.setOwner(owner);
 		this.setDataList(dataList);
 	}
 
@@ -29,6 +36,7 @@ public class DataHolder {
 				res = data;
 			}
 		}
+		
 		return res;
 	}
 
@@ -49,6 +57,14 @@ public class DataHolder {
 			}
 			
 		}
+	}
+
+	public UUID getOwner() {
+		return owner;
+	}
+
+	private void setOwner(UUID owner) {
+		this.owner = owner;
 	}
 
 }

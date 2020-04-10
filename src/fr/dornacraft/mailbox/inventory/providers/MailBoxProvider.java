@@ -13,17 +13,15 @@ import fr.dornacraft.mailbox.Main;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
 
 public class MailBoxProvider implements InventoryProvider {
+	public static Material LETTER_MENU_MATERIAL = Material.LECTERN;
+	public static Material ITEM_MENU_MATERIAL = Material.CHEST;
+	public static Material SEND_LETTER_MATERIAL = Material.HOPPER;
 	
 	private DataHolder dataSource;
 	
 	public MailBoxProvider(DataHolder dataSource) {
 		this.setDataSource(dataSource);
 	}
-
-	public static Material LETTER_MENU_MATERIAL = Material.LECTERN;
-	public static Material ITEM_MENU_MATERIAL = Material.CHEST;
-	
-	public static Material SEND_LETTER_MATERIAL = Material.HOPPER;
 
 	@Override
 	public void init(Player player, InventoryContents contents) {

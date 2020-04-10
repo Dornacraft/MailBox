@@ -1,8 +1,6 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import org.bukkit.Material;
@@ -19,7 +17,6 @@ import fr.dornacraft.devtoolslib.smartinvs.content.Pagination;
 import fr.dornacraft.devtoolslib.smartinvs.content.SlotIterator;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.Main;
-import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
 import fr.dornacraft.mailbox.DataManager.DataManager;
 import fr.dornacraft.mailbox.DataManager.LetterData;
@@ -51,7 +48,7 @@ public class LetterContentProvider implements InventoryProvider {
 	private Boolean isSortingByDecreasingDate = true;
 	
 	private MailBoxInventoryHandler inventoryHandler = MailBoxInventoryHandler.getInstance();
-	private DataManager manager = MailBoxController.getInstance().getDataManager();
+	private DataManager dataManager = MailBoxController.getInstance().getDataManager();
 	
 	//builder
 	private LetterContentProvider(DataHolder dataSource) {
@@ -73,14 +70,20 @@ public class LetterContentProvider implements InventoryProvider {
 		if (!pagination.isFirst()) {
 			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents) );
 		}
-		
+
 		contents.set(4,  4, ClickableItem.of(new ItemStackBuilder(DELETE_ALL_MATERIAL).setName("§4§lVider la boite").build(), e -> {
-			List<LetterData> dataList = manager.getTypeData(this.dataSource, LetterData.class);
-			Builder builder = DeletionContentProvider.getBuilder(this.dataSource, dataList );
+			List<LetterData> dataList = dataManager.getTypeData(this.dataSource, LetterData.class);
+			List<Long> listDataId = new ArrayList<>();
+			for(LetterData data : dataList) {
+				listDataId.add(data.getId());
+			}
+			
+			Builder builder = DeletionDatasContentProvider.builder(this.dataSource, listDataId, "§c§lSupprimer les "+ listDataId.size() +" lettres ?");
 			builder.parent(contents.inventory());
 			SmartInventory deletionInventory = builder.build();
 			deletionInventory.open(player);
 		}));
+		
 		
 		if (!pagination.isLast()) {
 			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents) );
@@ -95,22 +98,22 @@ public class LetterContentProvider implements InventoryProvider {
 	}
 	
 	private void dynamicContent(Player player, InventoryContents contents) {
-		List<LetterData> letterList = manager.getTypeData(this.dataSource, LetterData.class);
+		List<LetterData> letterList = dataManager.getTypeData(this.dataSource, LetterData.class);
 		
 		if(this.getFilterType() != null) {
 			letterList = filterByType(letterList, this.getFilterType());
 		}
 		
 		if(this.isSortingByDecreasingDate ) {
-			letterList.sort(compareByAscendingDate().reversed());
+			letterList.sort(dataManager.compareByAscendingDate().reversed());
 			
 		} else {
-			letterList.sort(compareByAscendingDate());
+			letterList.sort(dataManager.compareByAscendingDate());
 		}
 		
 		ClickableItem[] clickableItems = new ClickableItem[letterList.size()];
 		
-		for(Integer index = 0; index < letterList.size(); index ++) {//TODO filters compatible with other filters
+		for(Integer index = 0; index < letterList.size(); index ++) {
 			LetterData tempData = letterList.get(index);
 			
 			clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData),
@@ -136,7 +139,7 @@ public class LetterContentProvider implements InventoryProvider {
 							LetterDataSQL.getInstance().update(tempData);
 							
 						} else if(clickType == ClickType.CONTROL_DROP) {//supprimer
-							Builder builder = DeletionContentProvider.getBuilder(this.dataSource, tempData);
+							Builder builder = DeletionDataContentProvider.builder(this.dataSource, tempData.getId() );
 							builder.parent(contents.inventory());
 							SmartInventory deletionInventory = builder.build();
 							deletionInventory.open(player);
@@ -151,7 +154,7 @@ public class LetterContentProvider implements InventoryProvider {
 		pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
 		contents.set(4, 3, generateCycleFilters() );
 		contents.set(4, 5, generateSortByDateItem() );
-		contents.set(4, 6, generateNonReadLettersItem(player, filterLetterByReadState(manager.getTypeData(this.dataSource, LetterData.class), false)) );
+		contents.set(4, 6, generateNonReadLettersItem(player, filterLetterByReadState(dataManager.getTypeData(this.dataSource, LetterData.class), false)) );
 	}
 	
 	//generate items
@@ -218,20 +221,6 @@ public class LetterContentProvider implements InventoryProvider {
 			}
 		});
 		
-	}
-	
-	//sorters
-	private Comparator<Data> compareByAscendingDate(){
-		return new Comparator<Data>() {
-
-			@Override
-			public int compare(Data data1, Data data2) {
-				Timestamp date1 = data1.getCreationDate();
-				Timestamp date2 = data2.getCreationDate();
-				
-				return date1.compareTo(date2);
-			}
-		};
 	}
 	
 	//filters
