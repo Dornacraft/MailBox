@@ -87,8 +87,18 @@ public class ItemContentProvider implements  InventoryProvider {
 		if(!pagination.isFirst() ) {
 			contents.set(4, 1, ClickableItem.of(new ItemStackBuilder(handler.PAGINATION_MATERIAL).setName("Page précédente").build(), e -> inventory.open(player, pagination.previous().getPage())) );
 		}
-		
-		contents.set(4, 3, generateRecoverAll(player, contents) );
+		contents.set(4,  3, ClickableItem.empty(new ItemStackBuilder(RULES_MATERIAL).setName("§e§lRappel")
+				.addLore("Le stockage de ressources via la boîte")
+				.addLore("de réception par l'intermédiaire de")
+				.addLore("l'HDV est interdit. Afin de prévenir et")
+				.addLore("sanctionner toute tentative, un contrôle")
+				.addLore("strict est effectué régulièrement et les")
+				.addLore("dispositions nécessaires seront prises")
+				.addLore("en cas d'abus (cf. règlement).")
+				.build()
+				)
+			);
+		contents.set(4, 5, generateRecoverAll(player, contents) );
 		
 		if(!pagination.isLast()) {
 			contents.set(4, 7, ClickableItem.of(new ItemStackBuilder(handler.PAGINATION_MATERIAL).setName("Page suivante").build(), e -> inventory.open(player, pagination.next().getPage())) );

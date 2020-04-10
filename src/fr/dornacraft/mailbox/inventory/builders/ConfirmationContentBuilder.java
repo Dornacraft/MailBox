@@ -1,4 +1,4 @@
-package fr.dornacraft.mailbox.inventory.providers;
+package fr.dornacraft.mailbox.inventory.builders;
 
 import java.util.function.Consumer;
 

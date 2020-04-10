@@ -12,6 +12,7 @@ import fr.dornacraft.mailbox.DataManager.DataHolder;
 import fr.dornacraft.mailbox.DataManager.ItemData;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
+import fr.dornacraft.mailbox.inventory.builders.ConfirmationContentBuilder;
 
 public class DeletionDataContentProvider extends ConfirmationContentBuilder {
 	public static final String INVENTORY_SUB_ID = "deleteItem";
