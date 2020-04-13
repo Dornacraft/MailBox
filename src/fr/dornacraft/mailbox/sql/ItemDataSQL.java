@@ -34,7 +34,7 @@ public class ItemDataSQL extends DAO<ItemData>{
 			query.close();
 			
 		} catch (SQLException e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 		
 	}

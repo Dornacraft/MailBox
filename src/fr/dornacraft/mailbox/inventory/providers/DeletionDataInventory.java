@@ -14,13 +14,13 @@ import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.builders.ConfirmationContentBuilder;
 
-public class DeletionDataContentProvider extends ConfirmationContentBuilder {
+public class DeletionDataInventory extends ConfirmationContentBuilder {
 	public static final String INVENTORY_SUB_ID = "deleteItem";
 	
 	private DataHolder holder;
 	private Long dataId;
 	
-	public DeletionDataContentProvider(DataHolder dataSource, Long dataId, String InventoryTitle) {
+	public DeletionDataInventory(DataHolder dataSource, Long dataId, String InventoryTitle) {
 		super(INVENTORY_SUB_ID, InventoryTitle);
 		this.setHolder(dataSource);
 		this.setDataId(dataId);
@@ -39,7 +39,7 @@ public class DeletionDataContentProvider extends ConfirmationContentBuilder {
 			obj = "la lettre";
 		}
 		
-		DeletionDataContentProvider deletionProvivder = new DeletionDataContentProvider(holder, dataId, String.format("§c§lSupprimer %s?", obj));
+		DeletionDataInventory deletionProvivder = new DeletionDataInventory(holder, dataId, String.format("§c§lSupprimer %s?", obj));
 		Builder res = deletionProvivder.getBuilder();
 		res.provider(deletionProvivder);
 		

@@ -28,7 +28,7 @@ public class DataSQL extends DAO<Data> {
 			query.close();
 			
 		} catch (SQLException e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 
 	}

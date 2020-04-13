@@ -9,10 +9,12 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
+import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.sql.DataSQL;
 import fr.dornacraft.mailbox.sql.ItemDataSQL;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
@@ -77,7 +79,7 @@ public class MailBoxController {
 		return res;
 	}
 
-	public void sendLetter(Player recipient, ItemStack book) { //FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
+	public void sendLetter(OfflinePlayer recipient, ItemStack book) {//FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
 		if (recipient != null) {
 			if (book.getType() == Material.WRITTEN_BOOK && book.hasItemMeta() && book.getItemMeta() instanceof BookMeta) {
 				BookMeta bookMeta = (BookMeta) book.getItemMeta();
@@ -96,7 +98,9 @@ public class MailBoxController {
 				}
 				
 				LetterDataSQL.getInstance().create(letterData);
-				recipient.sendMessage("Vous avez reçu un lettre de la part de " + author);
+				if(recipient.getPlayer() != null) {
+					recipient.getPlayer().sendMessage("Vous avez reçu un lettre de la part de " + author);
+				}
 			}
 		}
 	}
@@ -105,30 +109,44 @@ public class MailBoxController {
 
 	}
 	
+	public ItemStack getBookView(LetterData letterData) {
+		StringBuilder letterHead = new StringBuilder();
+		letterHead.append(String.format("§lAuteur(e):§r %s\n", letterData.getAuthor()));
+		
+		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
+		
+		letterHead.append(String.format("§lDate de réçéption:§r\n - %s\n", sdf.format(letterData.getCreationDate()) ));
+		letterHead.append(String.format("§lObjet:§r %s\n", letterData.getObject() ));
+		
+		ItemStack book = new ItemStackBuilder(Material.WRITTEN_BOOK).build();
+		BookMeta bookMeta = (BookMeta) book.getItemMeta();
+		bookMeta.setAuthor(letterData.getAuthor());
+		List<String> pages = new ArrayList<>();
+		pages.add(letterHead.toString());
+		pages.addAll(letterData.getContent() );
+		
+		bookMeta.setPages(pages);
+		bookMeta.setTitle(letterData.getObject());
+		
+		book.setItemMeta(bookMeta);
+		
+		return book;
+		
+	}
+	
 	/**
 	 * Envoie le contenue de la lettre au joueur cible et la marque comme ayant été lu
 	 * @param player joueur cible
 	 * @param id l iD de la lettre a afficher dans le chat
 	 */
 	public void readLetter(Player player, LetterData letterData) {
-		StringBuilder letter = new StringBuilder();
-		letter.append("\n");
-		letter.append(String.format("§e§lAuteur(e):§r %s\n", letterData.getAuthor()));
+		player.openBook(getBookView(letterData));
 		
-		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
-		
-		letter.append(String.format("§e§lDate de réçéption:§r %s\n", sdf.format(letterData.getCreationDate()) ));
-		letter.append(String.format("§e§lObjet:§r %s\n", letterData.getObject() ));
-		letter.append("§e§lMessage:§r\n");
-		
-		for(String page : letterData.getContent()) {
-			letter.append("§r" + page + "§r");
+		if(letterData.getUuid().equals(player.getUniqueId())) {
+			letterData.setIsRead(true);
+			LetterDataSQL.getInstance().update(letterData);
+			
 		}
-		
-		player.sendMessage(letter.toString());
-		
-		letterData.setIsRead(true);
-		LetterDataSQL.getInstance().update(letterData);
 	}
 
 	public void deleteLetter(DataHolder holder, Long id) {
@@ -176,11 +194,10 @@ public class MailBoxController {
 	}
 	
 	public Boolean isOutOfDate(ItemData itemData) {
-		
-		LocalDateTime date = itemData.getCreationDate().toLocalDateTime(); // to datetime
+		LocalDateTime date = itemData.getCreationDate().toLocalDateTime();
 		LocalDateTime added = date.plus(itemData.getDuration());
+		
 		return added.compareTo(LocalDateTime.now()) < 0 ;
-
 	}
 	
 	public void deleteItem(DataHolder holder, Long id) {
@@ -192,7 +209,7 @@ public class MailBoxController {
 		}
 	}
 
-	public void sendItem(Player recipient, ItemStack itemstack) {
+	public void sendItem(OfflinePlayer recipient, ItemStack itemstack) {
 		if (recipient != null) {
 			Data data = new DataFactory(recipient.getUniqueId(), recipient.getName(), "object hard code"); //TODO parametrize author
 			ItemData itemData = new ItemData(data, itemstack, Duration.ofSeconds(20));// TODO parametrize duration sur les items
@@ -205,7 +222,10 @@ public class MailBoxController {
 			}
 			
 			pHolder.addData(itemData);
-			recipient.sendMessage("Vous avez reçu un objet de la part de " + recipient.getName());
+			if(recipient.getPlayer() != null) {
+				recipient.getPlayer().sendMessage("Vous avez reçu un objet de la part de " + recipient.getName());
+				
+			}
 		}
 	}
 

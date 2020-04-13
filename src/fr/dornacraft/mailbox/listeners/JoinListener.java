@@ -19,5 +19,5 @@ public class JoinListener implements Listener {
 		MailBoxController.getInstance().load(player.getUniqueId());
 
 	}
-
+	
 }

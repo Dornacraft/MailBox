@@ -11,11 +11,11 @@ import java.util.UUID;
  */
 public class DataHolder {
 	
-	private UUID owner;
+	private UUID ownerUuid;
 	private List<Data> listData = new ArrayList<>();
 	
 	public DataHolder(UUID owner, List<Data> dataList) {
-		this.setOwner(owner);
+		this.setOwnerUuid(owner);
 		this.setDataList(dataList);
 	}
 
@@ -59,12 +59,12 @@ public class DataHolder {
 		}
 	}
 
-	public UUID getOwner() {
-		return owner;
+	public UUID getOwnerUuid() {
+		return this.ownerUuid;
 	}
 
-	private void setOwner(UUID owner) {
-		this.owner = owner;
+	private void setOwnerUuid(UUID ownerUuid) {
+		this.ownerUuid = ownerUuid;
 	}
 
 }

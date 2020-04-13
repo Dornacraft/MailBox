@@ -30,18 +30,18 @@ public class LetterDataSQL extends DAO<LetterData> {
 			query.close();
 
 		} catch (SQLException e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 	}
 	
 	/**
 	 * Transforme une liste de string en string unique et les sépare par un "\n"
 	 */
-	private String toText(List<String> list) {
+	public String toText(List<String> list) {
 		StringBuilder sb = new StringBuilder();
 
 		for (String page : list) {
-			sb.append(String.format("%s\n", page));
+			sb.append(String.format("%s#-#", page == null || page.isEmpty() ? " " : page));
 		}
 
 		return sb.toString();
@@ -51,7 +51,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 	 * Transforme un String en List en utilisant "\n" comme séparateur
 	 */
 	private List<String> fromText(String str) {
-		return Arrays.asList(StringUtils.split(str, "\n"));
+		return Arrays.asList(StringUtils.split(str, "#-#"));
 	}
 
 	/*
