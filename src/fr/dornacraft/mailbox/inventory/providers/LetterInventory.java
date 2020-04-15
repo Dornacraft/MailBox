@@ -1,6 +1,8 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,9 +19,6 @@ import fr.dornacraft.mailbox.DataManager.DataManager;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.LetterType;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
-import fr.dornacraft.mailbox.DataManager.filters.Filter;
-import fr.dornacraft.mailbox.DataManager.filters.FilterOperator;
-import fr.dornacraft.mailbox.DataManager.filters.FilterTransformer;
 import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
@@ -40,8 +39,8 @@ public class LetterInventory extends InventoryProviderBuilder {
 	private DataHolder dataSource;
 
 	// secondary
-	private Filter<String> authorsFilter = new Filter<>();
-	private Filter<LetterData> dataFilter = new Filter<>();
+	private List<LetterData> toShow = new ArrayList<>();
+	private List<String> showedAuthors = new ArrayList<>();
 	private LetterType showedLetterType = null;
 	private Integer letterTypeIndex = -1;
 	private Boolean isSortingByDecreasingDate = true;
@@ -54,7 +53,6 @@ public class LetterInventory extends InventoryProviderBuilder {
 		super("MailBox_Letters", "§lMenu des lettres", 5);
 
 		this.setDataSource(dataSource);
-		this.setDataFilter(new Filter<LetterData>(dataManager.getTypeData(this.dataSource, LetterData.class)));
 
 	}
 
@@ -62,12 +60,12 @@ public class LetterInventory extends InventoryProviderBuilder {
 		super("MailBox_Letters", "§lMenu des lettres", 5);
 
 		this.setDataSource(dataSource);
-		this.setDataFilter(new Filter<LetterData>(dataManager.getTypeData(this.dataSource, LetterData.class)));
 		this.setParent(parent);
 	}
 
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
+		this.setToShow(dataManager.getTypeData(this.getDataSource(), LetterData.class) );
 		Pagination pagination = contents.pagination();
 		pagination.setItemsPerPage(27);
 
@@ -82,23 +80,19 @@ public class LetterInventory extends InventoryProviderBuilder {
 		}
 
 		contents.set(4, 2,ClickableItem.of(new ItemStackBuilder(PLAYER_FILTER_MATERIAL)
-				.setName("§c§7" + (this.getAuthorsFilter().isEmpty() ? "Filtre par joueurs" : this.getAuthorsFilter().size() + " joueurs selectionnés")).build(), e -> {
-							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getAuthorsFilter(), "§lExpéditeurs a affichés:", this);
+				.setName("§c§7" + (this.getShowedAuthors().isEmpty() ? "Filtre par joueurs" : this.getShowedAuthors().size() + " joueurs selectionnés")).build(), e -> {
+							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getShowedAuthors(), "§lExpéditeurs a affichés:", this);
 							selector.openInventory(player);
 
 						}));
 
 		contents.set(4, 4, ClickableItem.of(new ItemStackBuilder(inventoryHandler.DELETE_ALL_MATERIAL)
 				.setName("§4§lSupprimer les lettres affichées.").build(), e -> {
-					Filter<Long> idList = Filter.transform(new Filter<LetterData>(getDataFilter().applyFilters() ), new FilterTransformer<LetterData, Long>() {
+			        List<Long> idList = toShow.stream()
+			                .map(LetterData::getId)
+			                .collect(Collectors.toList());
 
-						@Override
-						public Long execute(LetterData obj) {
-							return obj.getId();
-						}
-					});
-
-					DeletionDatasContentProvider inv = new DeletionDatasContentProvider(this.dataSource, idList.getEntries(), "§4§lSupprimer les " + idList.size() + " lettres ?", this);
+					DeletionDatasContentProvider inv = new DeletionDatasContentProvider(this.dataSource, idList, "§4§lSupprimer les " + idList.size() + " lettres ?", this);
 					inv.openInventory(player);
 					
 				}));
@@ -116,33 +110,30 @@ public class LetterInventory extends InventoryProviderBuilder {
 	}
 
 	private void dynamicContent(Player player, InventoryContents contents) {
+		this.setToShow(dataManager.getTypeData(this.getDataSource(), LetterData.class) );
+		
 		if (this.getShowedLetterType() != null) {
-			this.getDataFilter().putFilterOperator(LETTER_OPERATOR_TYPE );
-
-		} else {
-			this.getDataFilter().removeFilterOperator(LETTER_OPERATOR_TYPE );
+			this.setToShow(this.filterByType(this.getToShow()) );
 
 		}
 
-		if (!this.getAuthorsFilter().isEmpty()) {
-			this.getDataFilter().putFilterOperator(LETTER_OERATOR_AUTHORS );
+		if (!this.getShowedAuthors().isEmpty()) {
+			this.setToShow(this.filterByAuthors(this.getToShow()));
 			
 		}
 
 		if (this.getIsSortingByDecreasingDate()) {
-			this.getDataFilter().sort(dataManager.ascendingDateComparator().reversed());
+			this.getToShow().sort(dataManager.ascendingDateComparator().reversed());
 
 		} else {
-			this.getDataFilter().sort(dataManager.ascendingDateComparator());
+			this.getToShow().sort(dataManager.ascendingDateComparator());
 
 		}
 		
-		Filter<LetterData> afterFfiltering = this.getDataFilter().applyFilters();
-		
-		ClickableItem[] clickableItems = new ClickableItem[afterFfiltering.size()];
+		ClickableItem[] clickableItems = new ClickableItem[toShow.size()];
 
-		for (Integer index = 0; index < afterFfiltering.size(); index++) {
-			LetterData tempData = afterFfiltering.get(index);
+		for (Integer index = 0; index < toShow.size(); index++) {
+			LetterData tempData = toShow.get(index);
 
 			clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData), e -> {
 				ClickType clickType = e.getClick();
@@ -179,32 +170,34 @@ public class LetterInventory extends InventoryProviderBuilder {
 		contents.set(4, 6, generateNonReadLettersItem(player));
 	}
 
-	public final FilterOperator<LetterData> LETTER_OERATOR_AUTHORS = new FilterOperator<LetterData>("LETTER_OERATOR_AUTHORS") {
-
-		@Override
-		public Boolean checker(LetterData letterData) {
-			return getAuthorsFilter().containsEntry(letterData.getAuthor() );
-		}
+	private List<LetterData> filterByAuthors(List<LetterData> list) {
+        List<LetterData> res = list.stream()
+                .filter(letterData -> this.getShowedAuthors().contains(letterData.getAuthor()) )
+                .collect(Collectors.toList());   
+		
+		
+		return res;
 	};
 	
-	public final FilterOperator<LetterData> LETTER_NOT_YET_READ = new FilterOperator<LetterData>("LETTER_NOT_YET_READ") {
-
-		@Override
-		public Boolean checker(LetterData letterData) {
-			return letterData.getIsRead().equals(false);
-		}
+	private List<LetterData> filterByReadState(List<LetterData> letterList, Boolean isRead) {
+        List<LetterData> res = letterList.stream()
+                .filter(letter -> letter.getIsRead().equals(isRead) )
+                .collect(Collectors.toList());   
+		
+		return res;
 	};
-	public final FilterOperator<LetterData> LETTER_OPERATOR_TYPE = new FilterOperator<LetterData>("LETTER_OPERATOR_TYPE") {
-
-		@Override
-		public Boolean checker(LetterData letterData) {
-			return letterData.getLetterType().equals(getShowedLetterType());
-		}
+	
+	private List<LetterData> filterByType(List<LetterData> letterList) {
+        List<LetterData> res = letterList.stream()
+                .filter(letter -> letter.getLetterType() == this.getShowedLetterType() )
+                .collect(Collectors.toList());   
+		
+		return res;
 	};
 
 	// generate items
 	private ClickableItem generateNonReadLettersItem(Player player) {
-		List<LetterData> list = Filter.filter(this.getDataFilter().getEntries(), LETTER_NOT_YET_READ);
+		List<LetterData> list = this.filterByReadState(dataManager.getTypeData(this.getDataSource(), LetterData.class), false);
 		
 		ItemStack itemStack = new ItemStackBuilder(NON_READ_LETTERS_MATERIAL)
 				.setName(String.format("§l§eVous avez %s lettres non lues.", list.size()))
@@ -212,7 +205,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 				.addLore("marquée comme lues.").build();
 
 		return ClickableItem.of(itemStack, e -> {
-			for (LetterData letterData : this.getDataFilter() ) {
+			for (LetterData letterData : list ) {
 				letterData.setIsRead(true);
 				LetterDataSQL.getInstance().update(letterData);
 			}
@@ -271,7 +264,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 		});
 
 	}
-
+	
 	// manipulation
 	private void cycleAddIndex(Boolean b) {
 		Integer index = this.letterTypeIndex;
@@ -302,14 +295,6 @@ public class LetterInventory extends InventoryProviderBuilder {
 		this.letterTypeIndex = letterTypeIndex;
 	}
 
-	public Filter<LetterData> getDataFilter() {
-		return dataFilter;
-	}
-
-	public void setDataFilter(Filter<LetterData> dataFilter) {
-		this.dataFilter = dataFilter;
-	}
-
 	public DataHolder getDataSource() {
 		return dataSource;
 	}
@@ -333,12 +318,20 @@ public class LetterInventory extends InventoryProviderBuilder {
 	public void setIsSortingByDecreasingDate(Boolean isSortingByDecreasingDate) {
 		this.isSortingByDecreasingDate = isSortingByDecreasingDate;
 	}
-
-	public Filter<String> getAuthorsFilter() {
-		return authorsFilter;
+	
+	public List<String> getShowedAuthors() {
+		return showedAuthors;
 	}
 
-	public void setAuthorsFilter(Filter<String> authorsFilter) {
-		this.authorsFilter = authorsFilter;
+	public void setShowedAuthors(List<String> showedAuthors) {
+		this.showedAuthors = showedAuthors;
+	}
+
+	public List<LetterData> getToShow() {
+		return toShow;
+	}
+
+	public void setToShow(List<LetterData> toShow) {
+		this.toShow = toShow;
 	}
 }

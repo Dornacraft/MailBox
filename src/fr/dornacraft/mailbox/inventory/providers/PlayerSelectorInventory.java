@@ -1,5 +1,8 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -10,8 +13,6 @@ import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.devtoolslib.smartinvs.content.Pagination;
 import fr.dornacraft.devtoolslib.smartinvs.content.SlotIterator;
 import fr.dornacraft.mailbox.ItemStackBuilder;
-import fr.dornacraft.mailbox.DataManager.filters.Filter;
-import fr.dornacraft.mailbox.DataManager.filters.FilterOperator;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 import fr.dornacraft.mailbox.listeners.PlayerChatSelector;
 
@@ -20,25 +21,17 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	public static final Material CHOOSE_FACTION_MATERIAL = Material.MAGENTA_BANNER;
 	public static final Material CHOOSE_PRECISE_PLAYER_MATERIAL = Material.PLAYER_HEAD;
 	
-	private Filter<String> authorsFilter;
+	private List<String> showedAuthors;
 	
-	public PlayerSelectorInventory(Filter<String> filter, String invTitle) {
+	public PlayerSelectorInventory(List<String> authorsFilter, String invTitle) {
 		super("MailBox_Player_Selector", invTitle, 3);
-		this.setAuthorsFilter(filter);
+		this.showedAuthors = authorsFilter;
 	}
 	
-	public PlayerSelectorInventory(Filter<String> filter, String invTitle, InventoryProviderBuilder parent) {
+	public PlayerSelectorInventory(List<String> authorsFilter, String invTitle, InventoryProviderBuilder parent) {
 		super("MailBox_Player_Selector", invTitle, 3, parent);
-		this.setAuthorsFilter(filter);
+		this.showedAuthors = authorsFilter;
 	}
-	
-	public final FilterOperator<String> PLAYER_NAME_ONLINE = new FilterOperator<String>("PLAYER_NAME_ONLINE") {
-
-		@Override
-		public Boolean checker(String obj) {
-			return Bukkit.getPlayer(obj) != null;
-		}
-	};
 
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
@@ -52,7 +45,7 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		
 		contents.set(1, 4, ClickableItem.of(new ItemStackBuilder(CHOOSE_PRECISE_PLAYER_MATERIAL).setName("§f§lJoueur précis").build(), e -> {
 			player.closeInventory();
-			PlayerChatSelector pcs = new PlayerChatSelector(player, this.getAuthorsFilter(), this);
+			PlayerChatSelector pcs = new PlayerChatSelector(player, this.getShowedAuthors(), this);
 			pcs.start();
 			
 		}));
@@ -61,13 +54,14 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 			ClickType clickType = e.getClick();
 			
 			if(clickType == ClickType.LEFT ) {
-				this.getAuthorsFilter().putFilterOperator(PLAYER_NAME_ONLINE );
-				this.getAuthorsFilter().applyFilters();
-				this.returnToParent(player);
+				List<String> tempList = Bukkit.getOnlinePlayers().stream()
+		                .map(Player::getName)
+		                .collect(Collectors.toList());
+				this.getShowedAuthors().addAll(tempList);
+				System.out.println("left");
 				
 			} else if (clickType == ClickType.RIGHT ) {
-				this.getAuthorsFilter().removeFilterOperator(PLAYER_NAME_ONLINE );
-				
+				this.getShowedAuthors().clear();
 			}
 			
 		}));
@@ -80,21 +74,16 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	public void updateInventory(Player player, InventoryContents contents) {
 		contents.set(0, 4, ClickableItem.of(new ItemStackBuilder(Material.REDSTONE)
 				.setName("§f§lLe filtre contient:")
-				.addLore(String.format(" - %s joueurs", this.getAuthorsFilter().applyFilters().size() ))
+				.addLore(String.format(" - %s joueurs", this.getShowedAuthors().size() ))
 				.addLore("Click droit pour supprimer les filtres")
 				.build(), e -> {
 					if(e.getClick() == ClickType.RIGHT) {
-						this.getAuthorsFilter().purgeEntries();
+						this.getShowedAuthors().clear();
 					}
 				}));
 	}
-
-	public Filter<String> getAuthorsFilter() {
-		return authorsFilter;
+	
+	public List<String> getShowedAuthors() {
+		return showedAuthors;
 	}
-
-	public void setAuthorsFilter(Filter<String> authorsFilter) {
-		this.authorsFilter = authorsFilter;
-	}
-
 }

@@ -76,6 +76,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 			
 			if(data != null) {
 				temp.setId(data.getId());
+				temp.setCreationDate(data.getCreationDate());
 	
 				PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " VALUES(?, ?, ?, ?)");
 				query.setLong(1, temp.getId());

@@ -2,6 +2,7 @@ package fr.dornacraft.mailbox.listeners;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,14 +17,13 @@ import fr.dornacraft.mailbox.DataManager.LetterType;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.DataManager.factories.DataFactory;
 import fr.dornacraft.mailbox.DataManager.factories.LetterDataFactory;
-import fr.dornacraft.mailbox.DataManager.filters.Filter;
 import fr.dornacraft.mailbox.playerManager.PlayerManager;
 
 public class LetterCreator implements Listener {
 	
 	private Player player;
 	private LetterDataFactory letterFactory;
-	private Filter<String> recipientsFilter = new Filter<>();
+	private List<String> recipients = new ArrayList<>();
 	
 	public LetterCreator(Player player) {
 		this.setPlayer(player);
@@ -82,25 +82,25 @@ public class LetterCreator implements Listener {
 						
 					}
 					//TODO -> attributions des destinataires
-				} else if(this.getRecipientsFilter().isEmpty() ) {
+				} else if(this.getRecipients().isEmpty() ) {
 					if(msg.equals("all")) {
 						
 					} else if (msg.equals("online")) {
 						
 					} else {
-						PlayerChatSelector pcs = new PlayerChatSelector(player, this.getRecipientsFilter());
+						PlayerChatSelector pcs = new PlayerChatSelector(player, this.getRecipients());
 						pcs.start();
 					}
 					
 				} else if(msg.equals("send") ) {//Creation terminé
-					if(this.getRecipientsFilter().size() > 1) {
+					if(this.getRecipients().size() > 1) {
 						letterFactory.setLetterType(LetterType.ANNOUNCE);
 						
 					} else {
 						letterFactory.setLetterType(LetterType.STANDARD);
 					}
 					
-					for(String name : this.getRecipientsFilter()) {
+					for(String name : this.getRecipients() ) {
 						LetterData toSend = letterFactory.clone();
 						toSend.setUuid(PlayerManager.getInstance().getUUID(name));
 						MailBoxController.getInstance().sendLetter(toSend);
@@ -129,11 +129,11 @@ public class LetterCreator implements Listener {
 		this.player = player;
 	}
 
-	public Filter<String> getRecipientsFilter() {
-		return recipientsFilter;
+	public List<String> getRecipients() {
+		return recipients;
 	}
 
-	public void setRecipientsFilter(Filter<String> recipientsFilter) {
-		this.recipientsFilter = recipientsFilter;
+	public void setRecipients(List<String> recipients) {
+		this.recipients = recipients;
 	}
 }

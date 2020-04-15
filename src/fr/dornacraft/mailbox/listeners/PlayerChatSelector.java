@@ -11,7 +11,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import fr.dornacraft.mailbox.Main;
-import fr.dornacraft.mailbox.DataManager.filters.Filter;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 import fr.dornacraft.mailbox.playerManager.PlayerInfo;
 import fr.dornacraft.mailbox.playerManager.PlayerManager;
@@ -19,18 +18,18 @@ import fr.dornacraft.mailbox.playerManager.PlayerManager;
 public class PlayerChatSelector implements Listener {
 	
 	private Player player;
-	private Filter<String> authorsFilter;
+	private List<String> showedAuthors;
 	private InventoryProviderBuilder parent;
 	
-	public PlayerChatSelector(Player player, Filter<String> playerFilter, InventoryProviderBuilder parent) {
+	public PlayerChatSelector(Player player, List<String> showedAuthors, InventoryProviderBuilder parent) {
 		this.setPlayer(player);
-		this.setAuthorsFilter(playerFilter);
+		this.setShowedAuthors(showedAuthors);
 		this.setParent(parent);
 	}
 	
-	public PlayerChatSelector(Player player, Filter<String> playerFilter) {
+	public PlayerChatSelector(Player player, List<String> showedAuthors) {
 		this.setPlayer(player);
-		this.setAuthorsFilter(playerFilter);
+		this.setShowedAuthors(showedAuthors);
 	}
 	
 	public void start() {
@@ -69,7 +68,12 @@ public class PlayerChatSelector implements Listener {
 			}
 			
 			if(isGood) {
-				this.getAuthorsFilter().addAllOnce(tempList);
+				for(String name : tempList) {
+					if(!getShowedAuthors().contains(name)) {
+						this.getShowedAuthors().add(name);
+					}
+				}
+				
 				player.sendMessage("Vous avez choisit de cibler " + tempList.size() + " joueurs.");
 				
 				this.stop();
@@ -101,12 +105,12 @@ public class PlayerChatSelector implements Listener {
 	public void setParent(InventoryProviderBuilder parent) {
 		this.parent = parent;
 	}
-	
-	public Filter<String> getAuthorsFilter() {
-		return authorsFilter;
+
+	public List<String> getShowedAuthors() {
+		return showedAuthors;
 	}
 
-	public void setAuthorsFilter(Filter<String> authorsFilter) {
-		this.authorsFilter = authorsFilter;
+	public void setShowedAuthors(List<String> showedAuthors) {
+		this.showedAuthors = showedAuthors;
 	}
 }
