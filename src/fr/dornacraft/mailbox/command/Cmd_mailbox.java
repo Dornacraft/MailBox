@@ -98,7 +98,6 @@ public class Cmd_mailbox implements CommandExecutor {
 								player.sendMessage("vous avez récupéré " + manager.getTypeData(holder, LetterData.class)+ " de la database.");
 							}
 						}
-	
 					}
 				} else if (args[0].equalsIgnoreCase("letter")) {
 					if(args.length == 2) {
@@ -114,7 +113,6 @@ public class Cmd_mailbox implements CommandExecutor {
 	
 						
 					}
-	
 				}
 			} else if (args.length == 1) {
 				PlayerInfo source = PlayerManager.getInstance().getPlayerInfo(args[0]);

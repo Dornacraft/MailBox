@@ -83,7 +83,7 @@ public class MailBoxController {
 	
 	public void sendLetter(LetterData letterData) {
 		LetterData temp = LetterDataSQL.getInstance().create(letterData);
-		
+
 		if(temp != null) {
 			DataHolder holder = dataManager.getDataHolder(temp.getUuid());
 			if (holder != null) {
