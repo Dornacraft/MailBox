@@ -20,7 +20,7 @@ public class ItemStackBuilder {
 	
 	private Material material = Material.STONE;
 	private String name = "";
-	private String loreFormat = "ง7";
+	private String loreFormat = "ยง7";
 	private List<String> lore = new ArrayList<>();
 	private Map<Enchantment, Integer> enchantments = new HashMap<>();
 	private List<ItemFlag> flags = new ArrayList<>();

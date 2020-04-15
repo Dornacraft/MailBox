@@ -2,14 +2,17 @@ package fr.dornacraft.mailbox.inventory.providers;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.ItemStack;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
-import fr.dornacraft.mailbox.inventory.builders.InventoryBuilder;
+import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
+import fr.dornacraft.mailbox.listeners.LetterCreator;
 
-public class MailBoxInventory extends InventoryBuilder {
+public class MailBoxInventory extends InventoryProviderBuilder {
 	public static Material LETTER_MENU_MATERIAL = Material.LECTERN;
 	public static Material ITEM_MENU_MATERIAL = Material.CHEST;
 	public static Material SEND_LETTER_MATERIAL = Material.HOPPER;
@@ -17,7 +20,7 @@ public class MailBoxInventory extends InventoryBuilder {
 	private DataHolder dataSource;
 	
 	public MailBoxInventory(DataHolder dataSource) {
-		super("MailBox_Principal", "ßlMenu Principal", 3);
+		super("MailBox_Principal", "¬ßlMenu principal", 3);
 		this.setDataSource(dataSource);
 	}
 
@@ -25,17 +28,31 @@ public class MailBoxInventory extends InventoryBuilder {
 	public void initializeInventory(Player player, InventoryContents contents) {
 		
 		
-		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(LETTER_MENU_MATERIAL).setName("ßfßlMenu des lettres reÁus").build(), e -> {
+		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(LETTER_MENU_MATERIAL).setName("¬ßf¬ßlMenu des lettres re√ßues").build(), e -> {
 			LetterInventory inv = new LetterInventory(this.getDataSource(), this);
 			inv.openInventory(player);
 		}));
 		
-		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(ITEM_MENU_MATERIAL).setName("ßfßlMenu des objets reÁus").build(), e ->  {
+		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(ITEM_MENU_MATERIAL).setName("¬ßf¬ßlMenu des objets re√ßues").build(), e ->  {
 			ItemInventory inv = new ItemInventory(this.getDataSource(), this);
 			inv.openInventory(player);
 		}));
 		
-		contents.set(2, 4, ClickableItem.empty(new ItemStackBuilder(SEND_LETTER_MATERIAL).setName("Envoyer une lettre").build()  ) );//TODO
+		contents.set(2, 4, ClickableItem.of(new ItemStackBuilder(SEND_LETTER_MATERIAL).setName("¬ßf¬ßlEnvoyer une lettre").build(), e ->  {
+			ClickType click = e.getClick();
+			ItemStack cursor = e.getCursor();
+			
+			if (click == ClickType.LEFT ) {
+				if(cursor.getType() == Material.BOOK ) { // avanc√©
+					
+				} else {//simple
+					player.closeInventory();
+					LetterCreator creator = new LetterCreator(player);
+					creator.start();
+				}
+				
+			}
+		}));
 	}
 
 	@Override

@@ -10,7 +10,6 @@ import java.util.UUID;
  *
  */
 public class DataHolder {
-	
 	private UUID ownerUuid;
 	private List<Data> listData = new ArrayList<>();
 	

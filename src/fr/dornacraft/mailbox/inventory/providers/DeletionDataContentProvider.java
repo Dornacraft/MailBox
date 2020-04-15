@@ -5,45 +5,28 @@ import java.util.function.Consumer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
-import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
 import fr.dornacraft.mailbox.DataManager.ItemData;
-import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.builders.ConfirmationContentBuilder;
+import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 
-public class DeletionDataInventory extends ConfirmationContentBuilder {
+public class DeletionDataContentProvider extends ConfirmationContentBuilder {
 	public static final String INVENTORY_SUB_ID = "deleteItem";
 	
 	private DataHolder holder;
 	private Long dataId;
 	
-	public DeletionDataInventory(DataHolder dataSource, Long dataId, String InventoryTitle) {
+	public DeletionDataContentProvider(DataHolder dataSource, Long dataId, String InventoryTitle, InventoryProviderBuilder parent) {
 		super(INVENTORY_SUB_ID, InventoryTitle);
 		this.setHolder(dataSource);
 		this.setDataId(dataId);
+		this.setParent(parent);
 		
 		// ClickableItem.empty(MailBoxInventoryHandler.getInstance().generateItemRepresentation(this.getHolder().getData(this.getDataId())) )
 
-	}
-	
-	public static Builder builder(DataHolder holder, Long dataId) {
-		Data data = holder.getData(dataId);
-		String obj = "";
-		
-		if(data instanceof ItemData) {
-			obj = "l'objet";
-		} else if (data instanceof LetterData) {
-			obj = "la lettre";
-		}
-		
-		DeletionDataInventory deletionProvivder = new DeletionDataInventory(holder, dataId, String.format("§c§lSupprimer %s?", obj));
-		Builder res = deletionProvivder.getBuilder();
-		res.provider(deletionProvivder);
-		
-		return res;
 	}
 
 	@Override
@@ -51,7 +34,7 @@ public class DeletionDataInventory extends ConfirmationContentBuilder {
 		return e -> {
 			
 			MailBoxController.getInstance().deleteData(this.getHolder(), this.getDataId());
-			contents.inventory().getParent().get().open(player);
+			this.getParent().openInventory(player);
 			
 		};
 	}

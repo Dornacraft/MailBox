@@ -19,7 +19,7 @@ public class DataManager {
 	
 	/**
 	 * 
-	 * @param uuid UUID du joueur concerné
+	 * @param uuid UUID du joueur concernï¿½
 	 * @return le DataHolder en cache du joueur, peut etre null.
 	 */
 	public DataHolder getDataHolder(UUID uuid) {
@@ -38,6 +38,7 @@ public class DataManager {
 				res.add(c.cast(data));
 			}
 		}
+		
 		return res;
 	}
 
@@ -54,18 +55,16 @@ public class DataManager {
 		}
 	}
 
-	//Comparators
-	public Comparator<Data> compareByAscendingDate(){
+	public Comparator<Data> ascendingDateComparator() {
 		return new Comparator<Data>() {
 
 			@Override
-			public int compare(Data data1, Data data2) {
-				Timestamp date1 = data1.getCreationDate();
-				Timestamp date2 = data2.getCreationDate();
+			public int compare(Data arg1, Data arg2) {
+				Timestamp date1 = arg1.getCreationDate();
+				Timestamp date2 = arg2.getCreationDate();
 				
 				return date1.compareTo(date2);
 			}
 		};
 	}
-	
 }

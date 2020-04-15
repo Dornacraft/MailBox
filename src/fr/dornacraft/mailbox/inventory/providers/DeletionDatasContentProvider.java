@@ -8,35 +8,28 @@ import java.util.function.Consumer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
-import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
 import fr.dornacraft.mailbox.DataManager.ItemData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.builders.ConfirmationContentBuilder;
+import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 
-public class DeletionDatasInventory extends ConfirmationContentBuilder {
+public class DeletionDatasContentProvider extends ConfirmationContentBuilder {
 	public static final String INVENTORY_SUB_ID = "deleteItems";
 	
 	private DataHolder holder;
 	private List<Long> dataIdList = new ArrayList<>();
 	
-	public DeletionDatasInventory(DataHolder dataSource, List<Long> listDataId, String inventoryTitle) {
+	public DeletionDatasContentProvider(DataHolder dataSource, List<Long> listDataId, String inventoryTitle, InventoryProviderBuilder parent) {
 		super(INVENTORY_SUB_ID, inventoryTitle);
 		this.setHolder(dataSource);
 		this.setDataIdList(listDataId);
+		this.setParent(parent);
 
 	}
 	
-	public static Builder builder(DataHolder holder, List<Long> listDataId, String title) {
-		DeletionDatasInventory deletionProvivder = new DeletionDatasInventory(holder, listDataId, title);
-		Builder res = deletionProvivder.getBuilder();
-		res.provider(deletionProvivder);
-		
-		return res;
-	}
-
 	@Override
 	public Consumer<InventoryClickEvent> onConfirmation(Player player, InventoryContents contents) {
 		return e -> {
@@ -45,7 +38,7 @@ public class DeletionDatasInventory extends ConfirmationContentBuilder {
 				
 			}
 			
-			contents.inventory().getParent().get().open(player);
+			this.getParent().openInventory(player);
 			
 		};
 	}

@@ -1,17 +1,13 @@
 package fr.dornacraft.mailbox.inventory.providers;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
-import fr.dornacraft.devtoolslib.smartinvs.SmartInventory;
-import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.devtoolslib.smartinvs.content.Pagination;
 import fr.dornacraft.devtoolslib.smartinvs.content.SlotIterator;
@@ -21,47 +17,52 @@ import fr.dornacraft.mailbox.DataManager.DataManager;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.LetterType;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
+import fr.dornacraft.mailbox.DataManager.filters.Filter;
+import fr.dornacraft.mailbox.DataManager.filters.FilterOperator;
+import fr.dornacraft.mailbox.DataManager.filters.FilterTransformer;
 import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
-import fr.dornacraft.mailbox.inventory.builders.FilterableInventoryBuilder;
-import fr.dornacraft.mailbox.inventory.builders.InventoryBuilder;
+import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
 
-public class LetterInventory extends FilterableInventoryBuilder {
-	
-	//Materials
+public class LetterInventory extends InventoryProviderBuilder {
+
+	// Materials
 	public static Material STANDARD_LETTER_MATERIAL = Material.PAPER;
 	public static Material SYSTEM_LETTER_MATERIAL = Material.MAP;
 	public static Material ANNOUNCE_LETTER_MATERIAL = Material.FILLED_MAP;
 	public static Material NO_LETTER_TYPE_MATERIAL = Material.GLASS;
-	
+
 	public static Material NON_READ_LETTERS_MATERIAL = Material.BELL;
 	public static Material PLAYER_FILTER_MATERIAL = Material.PLAYER_HEAD;
 	public static Material DATE_SORT_MATERIAL = Material.REPEATER;
-	
-	//primary
+
+	// primary
 	private DataHolder dataSource;
-	private Player sender;
-	
-	//secondary
-	private LetterType filterType = null;
+
+	// secondary
+	private Filter<String> authorsFilter = new Filter<>();
+	private Filter<LetterData> dataFilter = new Filter<>();
+	private LetterType showedLetterType = null;
 	private Integer letterTypeIndex = -1;
 	private Boolean isSortingByDecreasingDate = true;
-	
+
 	private MailBoxInventoryHandler inventoryHandler = MailBoxInventoryHandler.getInstance();
 	private DataManager dataManager = MailBoxController.getInstance().getDataManager();
-	
-	//builder
+
+	// builder
 	public LetterInventory(DataHolder dataSource) {
-		super("MailBox_Letters", "§lMenu des lettres", 5);
-		
-		this.dataSource = dataSource;
-		
+		super("MailBox_Letters", "Â§lMenu des lettres", 5);
+
+		this.setDataSource(dataSource);
+		this.setDataFilter(new Filter<LetterData>(dataManager.getTypeData(this.dataSource, LetterData.class)));
+
 	}
-	
-	public LetterInventory(DataHolder dataSource, InventoryBuilder parent) {
-		super("MailBox_Letters", "§lMenu des lettres", 5);
-		
-		this.dataSource = dataSource;
+
+	public LetterInventory(DataHolder dataSource, InventoryProviderBuilder parent) {
+		super("MailBox_Letters", "Â§lMenu des lettres", 5);
+
+		this.setDataSource(dataSource);
+		this.setDataFilter(new Filter<LetterData>(dataManager.getTypeData(this.dataSource, LetterData.class)));
 		this.setParent(parent);
 	}
 
@@ -69,293 +70,275 @@ public class LetterInventory extends FilterableInventoryBuilder {
 	public void initializeInventory(Player player, InventoryContents contents) {
 		Pagination pagination = contents.pagination();
 		pagination.setItemsPerPage(27);
-		
-		//CONTENT
+
+		// CONTENT
 		this.dynamicContent(player, contents);
 
-		contents.fillRow(3, ClickableItem.empty(new ItemStackBuilder(inventoryHandler.BORDER_MATERIAL).setName(" ").build()) );
-		
-		//FOOT
+		contents.fillRow(3,ClickableItem.empty(new ItemStackBuilder(inventoryHandler.BORDER_MATERIAL).setName(" ").build()));
+
+		// FOOT
 		if (!pagination.isFirst()) {
-			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents) );
+			contents.set(4, 1, inventoryHandler.getPreviousPageItem(player, contents));
 		}
-		
-		contents.set(4,  2, ClickableItem.of(new ItemStackBuilder(PLAYER_FILTER_MATERIAL)
-				.setName(this.getFilterList().isEmpty() ? "§4§lFiltrer par joueur(s)" : "§4§l" + this.getFilterList().size() + " joueurs selectionnés").build(), e -> {
-			PlayerSelector selector = new PlayerSelector(this, this);
-			selector.setParent(this);
-			selector.openInventory(player);
-			
-			
-		}));
-		
-		contents.set(4,  4, ClickableItem.of(new ItemStackBuilder(inventoryHandler.DELETE_ALL_MATERIAL).setName("§4§lVider la boite").build(), e -> {
-			List<LetterData> dataList = dataManager.getTypeData(this.dataSource, LetterData.class);
-			List<Long> listDataId = new ArrayList<>();
-			for(LetterData data : dataList) {
-				listDataId.add(data.getId());
-			}
-			
-			Builder builder = DeletionDatasInventory.builder(this.dataSource, listDataId, "§c§lSupprimer les "+ listDataId.size() +" lettres ?");
-			builder.parent(contents.inventory());
-			SmartInventory deletionInventory = builder.build();
-			deletionInventory.open(player);
-		}));
-		
-		
+
+		contents.set(4, 2,ClickableItem.of(new ItemStackBuilder(PLAYER_FILTER_MATERIAL)
+				.setName("Â§cÂ§7" + (this.getAuthorsFilter().isEmpty() ? "Filtre par joueurs" : this.getAuthorsFilter().size() + " joueurs selectionnÃ©s")).build(), e -> {
+							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getAuthorsFilter(), "Â§lExpÃ©diteurs a affichÃ©s:", this);
+							selector.openInventory(player);
+
+						}));
+
+		contents.set(4, 4, ClickableItem.of(new ItemStackBuilder(inventoryHandler.DELETE_ALL_MATERIAL)
+				.setName("Â§4Â§lSupprimer les lettres affichÃ©es.").build(), e -> {
+					Filter<Long> idList = Filter.transform(new Filter<LetterData>(getDataFilter().applyFilters() ), new FilterTransformer<LetterData, Long>() {
+
+						@Override
+						public Long execute(LetterData obj) {
+							return obj.getId();
+						}
+					});
+
+					DeletionDatasContentProvider inv = new DeletionDatasContentProvider(this.dataSource, idList.getEntries(), "Â§4Â§lSupprimer les " + idList.size() + " lettres ?", this);
+					inv.openInventory(player);
+					
+				}));
+
 		if (!pagination.isLast()) {
-			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents) );
+			contents.set(4, 7, inventoryHandler.getNextPageItem(player, contents));
 		}
-		
-		contents.set(4, 8, this.goBackItem(player) );
+
+		contents.set(4, 8, this.goBackItem(player));
 	}
 
 	@Override
 	public void updateInventory(Player player, InventoryContents contents) {
 		this.dynamicContent(player, contents);
 	}
-	
+
 	private void dynamicContent(Player player, InventoryContents contents) {
-		List<LetterData> letterList = dataManager.getTypeData(this.dataSource, LetterData.class);
-		
-		if(this.getFilterType() != null) {
-			letterList = filterByType(letterList, this.getFilterType());
-		}
-		
-		if(!this.getFilterList().isEmpty() ) {
-			letterList = applyPlayerFilter(letterList);
-		}
-		
-		if(this.isSortingByDecreasingDate ) {
-			letterList.sort(dataManager.compareByAscendingDate().reversed());
-			
+		if (this.getShowedLetterType() != null) {
+			this.getDataFilter().putFilterOperator(LETTER_OPERATOR_TYPE );
+
 		} else {
-			letterList.sort(dataManager.compareByAscendingDate());
+			this.getDataFilter().removeFilterOperator(LETTER_OPERATOR_TYPE );
+
 		}
-		
-		ClickableItem[] clickableItems = new ClickableItem[letterList.size()];
-		
-		for(Integer index = 0; index < letterList.size(); index ++) {
-			LetterData tempData = letterList.get(index);
+
+		if (!this.getAuthorsFilter().isEmpty()) {
+			this.getDataFilter().putFilterOperator(LETTER_OERATOR_AUTHORS );
 			
-			clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData),
-					e -> {
-						ClickType clickType = e.getClick();
-						ItemStack cursor = e.getCursor();
-						
-						if (clickType == ClickType.LEFT ) {
-							if(cursor.getType() == Material.WRITTEN_BOOK) {
-								System.out.println("OK");
-								
-							} else {//lecture dans le chat
-								MailBoxController.getInstance().readLetter(player, tempData);
-								player.closeInventory();
-								
-							}
-							
-						} else if(clickType == ClickType.RIGHT && player.getUniqueId().equals(tempData.getUuid()) ) {//marquer comme lu
-							tempData.setIsRead(!tempData.getIsRead());
-							LetterDataSQL.getInstance().update(tempData);
-							
-						} else if(clickType == ClickType.CONTROL_DROP) {//supprimer
-							Builder builder = DeletionDataInventory.builder(this.dataSource, tempData.getId() );
-							builder.parent(contents.inventory());
-							SmartInventory deletionInventory = builder.build();
-							deletionInventory.open(player);
-							
-						}
-						
-					});
+		}
+
+		if (this.getIsSortingByDecreasingDate()) {
+			this.getDataFilter().sort(dataManager.ascendingDateComparator().reversed());
+
+		} else {
+			this.getDataFilter().sort(dataManager.ascendingDateComparator());
+
 		}
 		
+		Filter<LetterData> afterFfiltering = this.getDataFilter().applyFilters();
+		
+		ClickableItem[] clickableItems = new ClickableItem[afterFfiltering.size()];
+
+		for (Integer index = 0; index < afterFfiltering.size(); index++) {
+			LetterData tempData = afterFfiltering.get(index);
+
+			clickableItems[index] = ClickableItem.of(inventoryHandler.generateItemRepresentation(tempData), e -> {
+				ClickType clickType = e.getClick();
+				ItemStack cursor = e.getCursor();
+
+				if (clickType == ClickType.LEFT) {
+					if (cursor.getType() == Material.WRITTEN_BOOK) {
+						System.out.println("OK");
+
+					} else {// lecture dans le chat
+						MailBoxController.getInstance().readLetter(player, tempData);
+						player.closeInventory();
+
+					}
+
+				} else if (clickType == ClickType.RIGHT && player.getUniqueId().equals(tempData.getUuid())) {//Toggle read state
+					tempData.setIsRead(!tempData.getIsRead());
+					LetterDataSQL.getInstance().update(tempData);
+
+				} else if (clickType == ClickType.CONTROL_DROP) {// supprimer
+					DeletionDataContentProvider inv = new DeletionDataContentProvider(this.getDataSource(), tempData.getId(), "Â§cÂ§lSupprimer la lettre ?", this);
+					inv.openInventory(player);
+
+				}
+
+			});
+		}
+
 		Pagination pagination = contents.pagination();
 		pagination.setItems(clickableItems);
 		pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
-		contents.set(4, 3, generateCycleFilters() );
-		contents.set(4, 5, generateSortByDateItem() );
-		contents.set(4, 6, generateNonReadLettersItem(player, filterLetterByReadState(dataManager.getTypeData(this.dataSource, LetterData.class), false)) );
+		contents.set(4, 3, generateCycleFilters());
+		contents.set(4, 5, generateSortByDateItem());
+		contents.set(4, 6, generateNonReadLettersItem(player));
 	}
+
+	public final FilterOperator<LetterData> LETTER_OERATOR_AUTHORS = new FilterOperator<LetterData>("LETTER_OERATOR_AUTHORS") {
+
+		@Override
+		public Boolean checker(LetterData letterData) {
+			return getAuthorsFilter().containsEntry(letterData.getAuthor() );
+		}
+	};
 	
-	//generate items
-	private ClickableItem generateNonReadLettersItem(Player player, List<LetterData> dataList) {
-		ItemStack itemStack = new ItemStackBuilder(NON_READ_LETTERS_MATERIAL).setName(String.format("§eVous avez %s lettres non lues", dataList.size() ))
-				.addLore("clique pour toutes les")
-				.addLore("marquée comme lues.")
-				.build();
+	public final FilterOperator<LetterData> LETTER_NOT_YET_READ = new FilterOperator<LetterData>("LETTER_NOT_YET_READ") {
+
+		@Override
+		public Boolean checker(LetterData letterData) {
+			return letterData.getIsRead().equals(false);
+		}
+	};
+	public final FilterOperator<LetterData> LETTER_OPERATOR_TYPE = new FilterOperator<LetterData>("LETTER_OPERATOR_TYPE") {
+
+		@Override
+		public Boolean checker(LetterData letterData) {
+			return letterData.getLetterType().equals(getShowedLetterType());
+		}
+	};
+
+	// generate items
+	private ClickableItem generateNonReadLettersItem(Player player) {
+		List<LetterData> list = Filter.filter(this.getDataFilter().getEntries(), LETTER_NOT_YET_READ);
 		
+		ItemStack itemStack = new ItemStackBuilder(NON_READ_LETTERS_MATERIAL)
+				.setName(String.format("Â§lÂ§eVous avez %s lettres non lues.", list.size()))
+				.addLore("clique pour toutes les")
+				.addLore("marquÃ©e comme lues.").build();
+
 		return ClickableItem.of(itemStack, e -> {
-			for(LetterData letterData : dataList) {
+			for (LetterData letterData : this.getDataFilter() ) {
 				letterData.setIsRead(true);
 				LetterDataSQL.getInstance().update(letterData);
 			}
 		});
 	}
-	
+
 	private ClickableItem generateSortByDateItem() {
-		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(DATE_SORT_MATERIAL).setName("§e§lAffichage:");
-		
-		if (this.isSortingByDecreasingDate) {
+		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(DATE_SORT_MATERIAL).setName("Â§7Â§lAffichage:");
 
-			itemStackBuilder.addLore(" -> du plus récent au plus ancien").addLore("clique pour toutes les triées")
-					.addLore("du plus ancien au plus récent.");
+		if (this.getIsSortingByDecreasingDate()) {
+
+			itemStackBuilder.addLore(" -> du plus rÃ©cent au plus ancien")
+					.addLore("clique pour toutes les triÃ©es")
+					.addLore("du plus ancien au plus rÃ©cent.");
 		} else {
-			itemStackBuilder.addLore(" -> du plus ancien au plus récent").addLore("clique pour toutes les triées")
-					.addLore("du plus récent au plus ancien.");
+			itemStackBuilder.addLore(" -> du plus ancien au plus rÃ©cent")
+					.addLore("clique pour toutes les triÃ©es")
+					.addLore("du plus rÃ©cent au plus ancien.");
 
 		}
-		
+
 		return ClickableItem.of(itemStackBuilder.build(), e -> {
-			this.isSortingByDecreasingDate = !this.isSortingByDecreasingDate;
-			}
-		);
-		
+			this.setIsSortingByDecreasingDate(!this.getIsSortingByDecreasingDate());
+		});
+
 	}
-	
+
 	private ClickableItem generateCycleFilters() {
-		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(inventoryHandler.getLetterTypeRepresentation(this.getFilterType()))
-				.addLore("droit / gauche: choisir filtre")
-				.addLore("Drop pour supprimer le filtre");
-		
+		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(
+				inventoryHandler.getLetterTypeRepresentation(this.getShowedLetterType()))
+						.addLore("droit / gauche: choisir filtre")
+						.addLore("Drop pour supprimer le filtre");
+
 		if (this.letterTypeIndex < 0) {
-			this.setFilterType(null);
-			
+			this.setShowedLetterType(null);
+
 		} else {
-			this.setFilterType(LetterType.values()[this.letterTypeIndex]);
+			this.setShowedLetterType(LetterType.values()[this.letterTypeIndex]);
 		}
-		
-		String filter = this.getFilterType() == null ? "aucun" : this.getFilterType().name().toLowerCase();
-		itemStackBuilder.setName("§f§lFiltre par type: " + filter);
-		
+
+		String filter = this.getShowedLetterType() == null ? "aucun" : this.getShowedLetterType().name().toLowerCase();
+		itemStackBuilder.setName("Â§fÂ§lFiltre par type: " + filter);
+
 		return ClickableItem.of(itemStackBuilder.build(), e -> {
 			ClickType click = e.getClick();
-			
-			if(click == ClickType.RIGHT) {
+
+			if (click == ClickType.RIGHT) {
 				this.cycleAddIndex(true);
-				
+
 			} else if (click == ClickType.LEFT) {
 				this.cycleAddIndex(false);
-				
+
 			} else if (click == ClickType.DROP) {
 				this.setLetterTypeIndex(-1);
 			}
 		});
-		
+
 	}
-	
-	//filters
-	private List<LetterData> filterByType(List<LetterData> dataList, LetterType type){
-		List<LetterData> res = new ArrayList<>();
-		
-		for(LetterData letterData : dataList) {
-			if(letterData.getLetterType() == type) {
-				res.add(letterData);
-			}
-		}
-		
-		
-		return res;
-	}
-	
-	private List<LetterData> filterLetterByReadState(List<LetterData> dataList, Boolean isRead){
-		List<LetterData> res = new ArrayList<>();
-		
-		for(LetterData letterData : dataList) {
-			if(letterData.getIsRead().equals(isRead)) {
-				res.add(letterData);
-			}
-		}
-		
-		
-		return res;
-	}
-	
-	private List<LetterData> applyPlayerFilter(List<LetterData> dataList){
-		List<LetterData> res = new ArrayList<>();
-		
-		for(LetterData letterData : dataList) {
-			for(OfflinePlayer offplayer : this.getFilterList()) {
-				if(offplayer.getName().contentEquals(letterData.getAuthor()) ) {
-					res.add(letterData);
-				}
-			}
-		}
-		
-		
-		return res;
-	}
-	
-	//manipulation
+
+	// manipulation
 	private void cycleAddIndex(Boolean b) {
 		Integer index = this.letterTypeIndex;
 		Integer minIndex = -1;
-		Integer maxIndex = LetterType.values().length -1;
-		
-		if(b) {
+		Integer maxIndex = LetterType.values().length - 1;
+
+		if (b) {
 			index = index + 1;
-			
+
 		} else {
 			index = index - 1;
 		}
-		
-		if(index < minIndex) {
+
+		if (index < minIndex) {
 			index = maxIndex;
-			
-		} else if(index > maxIndex){
+
+		} else if (index > maxIndex) {
 			index = minIndex;
-			
+
 		}
-		
+
 		this.setLetterTypeIndex(index);
-		
+
 	}
-	/*
-	private List<LetterData> applyPlayerFilters(List<LetterData> letterList){
-		List<LetterData> res = new ArrayList<>();
-		
-		if(!this.filterPlayer.isEmpty() ) {
-			for(LetterData letterData : letterList) {
-				if(offplayer.getName().equals(letterData.getAuthor())) {
-					
-					
-				}
-			}
-			
-		}
-		
-		
-		
-		return res;
-	}
-	*/
 	
 	// getters setters
-	public LetterType getFilterType() {
-		return filterType;
-	}
-
-	public void setFilterType(LetterType filterType) {
-		this.filterType = filterType;
-	}
-
 	public void setLetterTypeIndex(Integer letterTypeIndex) {
 		this.letterTypeIndex = letterTypeIndex;
 	}
-/*
-	public PlayerSelector getSelector() {
-		
-		if(this.selector == null) {
-			this.setSelector(new PlayerSelector(this.getSender()) );
-		}
-		
-		return this.selector;
-	}*/
 
-	public Player getSender() {
-		return sender;
+	public Filter<LetterData> getDataFilter() {
+		return dataFilter;
 	}
 
-	public void setSender(Player sender) {
-		this.sender = sender;
+	public void setDataFilter(Filter<LetterData> dataFilter) {
+		this.dataFilter = dataFilter;
 	}
-	
+
+	public DataHolder getDataSource() {
+		return dataSource;
+	}
+
+	public void setDataSource(DataHolder dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	public LetterType getShowedLetterType() {
+		return showedLetterType;
+	}
+
+	public void setShowedLetterType(LetterType showedLetterType) {
+		this.showedLetterType = showedLetterType;
+	}
+
+	public Boolean getIsSortingByDecreasingDate() {
+		return isSortingByDecreasingDate;
+	}
+
+	public void setIsSortingByDecreasingDate(Boolean isSortingByDecreasingDate) {
+		this.isSortingByDecreasingDate = isSortingByDecreasingDate;
+	}
+
+	public Filter<String> getAuthorsFilter() {
+		return authorsFilter;
+	}
+
+	public void setAuthorsFilter(Filter<String> authorsFilter) {
+		this.authorsFilter = authorsFilter;
+	}
 }

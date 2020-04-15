@@ -59,21 +59,21 @@ public class MailBoxInventoryHandler {
 	public ClickableItem getNextPageItem(Player player, InventoryContents contents) {
 		Pagination pagination = contents.pagination();
 		SmartInventory inventory = contents.inventory();
-		return ClickableItem.of(new ItemStackBuilder(PAGINATION_MATERIAL).setName("§r§lPage suivante").build(), e -> inventory.open(player, pagination.next().getPage()));
+		return ClickableItem.of(new ItemStackBuilder(PAGINATION_MATERIAL).setName("Â§eÂ§lPage suivante").build(), e -> inventory.open(player, pagination.next().getPage()));
 	}
 	
 	public ClickableItem getPreviousPageItem(Player player, InventoryContents contents) {
 		Pagination pagination = contents.pagination();
 		SmartInventory inventory = contents.inventory();
-		return ClickableItem.of(new ItemStackBuilder(PAGINATION_MATERIAL).setName("§r§lPage précédente").build(), e -> inventory.open(player, pagination.previous().getPage()));
+		return ClickableItem.of(new ItemStackBuilder(PAGINATION_MATERIAL).setName("Â§eÂ§lPage prÃ©cÃ©dente").build(), e -> inventory.open(player, pagination.previous().getPage()));
 	}
 	
 	private ItemStack generateLetterDataRepresentation(LetterData data) {
 		Material mat = getLetterTypeRepresentation(data.getLetterType() );
 		
-		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
-		ItemStackBuilder itemGenerator = new ItemStackBuilder(mat).setName("§r"+data.getObject()).setLoreFormat("§r§7")
-				.addLore("Expediteur: " + data.getAuthor()).addLore("date de reception: " + sdf.format(data.getCreationDate()) );
+		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy Ã  HH:mm:ss");
+		ItemStackBuilder itemGenerator = new ItemStackBuilder(mat).setName("Â§rÂ§7" + data.getObject()).setLoreFormat("Â§rÂ§7")
+				.addLore("ExpÃ©diteur: " + data.getAuthor()).addLore("date de reception: " + sdf.format(data.getCreationDate()) );
 		
 		if(!data.getIsRead()) {
 			itemGenerator.enchant(Enchantment.ARROW_FIRE, 1).addFlag(ItemFlag.HIDE_ENCHANTS);

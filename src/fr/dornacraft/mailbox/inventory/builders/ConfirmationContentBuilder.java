@@ -10,7 +10,7 @@ import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 
-public abstract class ConfirmationContentBuilder extends InventoryBuilder {
+public abstract class ConfirmationContentBuilder extends InventoryProviderBuilder {
 	public static Material CONFIRMATION_MATERIAL = Material.RED_TERRACOTTA;
 	public static Material ANNULATION_MATERIAL = Material.GREEN_TERRACOTTA;
 	
@@ -28,9 +28,9 @@ public abstract class ConfirmationContentBuilder extends InventoryBuilder {
 			consumer = this.onAnnulation(player, contents);
 		}
 		
-		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(ANNULATION_MATERIAL).setName("§f§lAnnuler").build(), consumer) );
+		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(ANNULATION_MATERIAL).setName("Â§fÂ§lAnnuler").build(), consumer) );
 		
-		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(CONFIRMATION_MATERIAL).setName("§4§lConfirmer").build(), onConfirmation(player, contents)) );
+		contents.set(1, 6, ClickableItem.of(new ItemStackBuilder(CONFIRMATION_MATERIAL).setName("Â§4Â§lConfirmer").build(), onConfirmation(player, contents)) );
 		
 	}
 	
