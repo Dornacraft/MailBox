@@ -47,7 +47,7 @@ public class MailBoxInventory extends InventoryProviderBuilder {
 					
 				} else {//simple
 					player.closeInventory();
-					LetterCreator creator = new LetterCreator(player);
+					LetterCreator creator = new LetterCreator(player.getUniqueId());
 					creator.start();
 				}
 				

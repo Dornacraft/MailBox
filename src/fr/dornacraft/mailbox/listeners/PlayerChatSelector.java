@@ -76,11 +76,12 @@ public class PlayerChatSelector implements Listener {
 				
 				player.sendMessage("Vous avez choisit de cibler " + tempList.size() + " joueurs.");
 				
-				this.stop();
 				if(this.getParent() != null) {
 					this.getParent().openInventory(this.getPlayer() );
 					
 				}
+				
+				this.stop();
 				
 			} else {
 				player.sendMessage("Action impossible: le joueur " + firstNotFound + " n'a pas été trouvé, veuillez réessayer.");

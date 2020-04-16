@@ -13,13 +13,13 @@ import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.builders.ConfirmationContentBuilder;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 
-public class DeletionDataContentProvider extends ConfirmationContentBuilder {
+public class DeletionDataInventory extends ConfirmationContentBuilder {
 	public static final String INVENTORY_SUB_ID = "deleteItem";
 	
 	private DataHolder holder;
 	private Long dataId;
 	
-	public DeletionDataContentProvider(DataHolder dataSource, Long dataId, String InventoryTitle, InventoryProviderBuilder parent) {
+	public DeletionDataInventory(DataHolder dataSource, Long dataId, String InventoryTitle, InventoryProviderBuilder parent) {
 		super(INVENTORY_SUB_ID, InventoryTitle);
 		this.setHolder(dataSource);
 		this.setDataId(dataId);

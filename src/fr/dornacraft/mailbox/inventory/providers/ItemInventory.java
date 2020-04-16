@@ -67,7 +67,7 @@ public class ItemInventory extends InventoryProviderBuilder {
 								}
 							} else {
 								if (clickType == ClickType.DROP || clickType == ClickType.CONTROL_DROP) {
-									DeletionDataContentProvider inv = new DeletionDataContentProvider(this.getDataSource(), dataId, "§c§lSupprimer l'objet ?", this);
+									DeletionDataInventory inv = new DeletionDataInventory(this.getDataSource(), dataId, "§c§lSupprimer l'objet ?", this);
 									inv.openInventory(player);
 
 								}
@@ -104,7 +104,7 @@ public class ItemInventory extends InventoryProviderBuilder {
 					listDataId.add(data.getId());
 				}
 				
-				DeletionDatasContentProvider deletionDatasInventory = new DeletionDatasContentProvider(this.dataSource, listDataId, "§4§lSupprimer les " + listDataId.size() +" objets ?", this);
+				DeletionDatasInventory deletionDatasInventory = new DeletionDatasInventory(this.dataSource, listDataId, "§4§lSupprimer les " + listDataId.size() +" objets ?", this);
 				deletionDatasInventory.openInventory(player);
 			}));
 		}

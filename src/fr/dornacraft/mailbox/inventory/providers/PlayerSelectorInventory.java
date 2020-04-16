@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.Inventory;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
@@ -22,6 +23,7 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	public static final Material CHOOSE_PRECISE_PLAYER_MATERIAL = Material.PLAYER_HEAD;
 	
 	private List<String> showedAuthors;
+	private PlayerChatSelector selector = null;
 	
 	public PlayerSelectorInventory(List<String> authorsFilter, String invTitle) {
 		super("MailBox_Player_Selector", invTitle, 3);
@@ -32,7 +34,7 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		super("MailBox_Player_Selector", invTitle, 3, parent);
 		this.showedAuthors = authorsFilter;
 	}
-
+	
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
 		Pagination pagination = contents.pagination();
@@ -44,9 +46,15 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		}));
 		
 		contents.set(1, 4, ClickableItem.of(new ItemStackBuilder(CHOOSE_PRECISE_PLAYER_MATERIAL).setName("§f§lJoueur précis").build(), e -> {
+			this.setFinalClose(false);
+			
+			if(this.getSelector() == null) {
+				this.setSelector(new PlayerChatSelector(player, this.getShowedAuthors(), this));
+				
+			}
+			
 			player.closeInventory();
-			PlayerChatSelector pcs = new PlayerChatSelector(player, this.getShowedAuthors(), this);
-			pcs.start();
+			this.getSelector().start();
 			
 		}));
 		
@@ -58,7 +66,6 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		                .map(Player::getName)
 		                .collect(Collectors.toList());
 				this.getShowedAuthors().addAll(tempList);
-				System.out.println("left");
 				
 			} else if (clickType == ClickType.RIGHT ) {
 				this.getShowedAuthors().clear();
@@ -68,6 +75,10 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		
 		contents.set(2, 8, this.goBackItem(player) );
 		
+	}
+	
+	public Boolean isThis(Inventory inv) {
+		return null;
 	}
 
 	@Override
@@ -85,5 +96,13 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	
 	public List<String> getShowedAuthors() {
 		return showedAuthors;
+	}
+
+	public PlayerChatSelector getSelector() {
+		return selector;
+	}
+
+	public void setSelector(PlayerChatSelector selector) {
+		this.selector = selector;
 	}
 }

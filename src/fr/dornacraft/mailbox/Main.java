@@ -69,6 +69,7 @@ public class Main extends JavaPlugin {
 	private void registerListeners() {
 		this.getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		this.getServer().getPluginManager().registerEvents(new QuitListener(), this);
+		
 	}
 
 }

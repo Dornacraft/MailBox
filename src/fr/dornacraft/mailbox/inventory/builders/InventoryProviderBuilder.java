@@ -23,6 +23,8 @@ public abstract class InventoryProviderBuilder implements InventoryProvider {
 	private Integer rows;
 	private InventoryProviderBuilder parent;
 	
+	private Boolean finalClose = true;
+	
 	public InventoryProviderBuilder(String id, String title, Integer rows) {
 		this.setId(id);
 		this.setTitle(title);
@@ -47,6 +49,7 @@ public abstract class InventoryProviderBuilder implements InventoryProvider {
 	
 	public void openInventory(Player player) {
 		Bukkit.getScheduler().runTask(Main.getInstance(), e -> {
+			this.setFinalClose(true);
 			SmartInventory inv = this.getBuilder().build();
 			inv.open(player);
 			
@@ -137,6 +140,14 @@ public abstract class InventoryProviderBuilder implements InventoryProvider {
 
 	public void setParent(InventoryProviderBuilder parent) {
 		this.parent = parent;
+	}
+
+	public Boolean getFinalClose() {
+		return finalClose;
+	}
+
+	public void setFinalClose(Boolean finalClose) {
+		this.finalClose = finalClose;
 	}
 	
 }

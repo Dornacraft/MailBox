@@ -92,7 +92,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 			                .map(LetterData::getId)
 			                .collect(Collectors.toList());
 
-					DeletionDatasContentProvider inv = new DeletionDatasContentProvider(this.dataSource, idList, "§4§lSupprimer les " + idList.size() + " lettres ?", this);
+					DeletionDatasInventory inv = new DeletionDatasInventory(this.dataSource, idList, "§4§lSupprimer les " + idList.size() + " lettres ?", this);
 					inv.openInventory(player);
 					
 				}));
@@ -154,7 +154,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 					LetterDataSQL.getInstance().update(tempData);
 
 				} else if (clickType == ClickType.CONTROL_DROP) {// supprimer
-					DeletionDataContentProvider inv = new DeletionDataContentProvider(this.getDataSource(), tempData.getId(), "§c§lSupprimer la lettre ?", this);
+					DeletionDataInventory inv = new DeletionDataInventory(this.getDataSource(), tempData.getId(), "§c§lSupprimer la lettre ?", this);
 					inv.openInventory(player);
 
 				}
