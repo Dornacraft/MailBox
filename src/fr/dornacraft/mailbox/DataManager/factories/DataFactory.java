@@ -1,7 +1,9 @@
-package fr.dornacraft.mailbox.DataManager;
+package fr.dornacraft.mailbox.DataManager.factories;
 
 import java.sql.Timestamp;
 import java.util.UUID;
+
+import fr.dornacraft.mailbox.DataManager.Data;
 /**
  * Créer des Data (pour l'importation depuis la base de donnée)
  * @author Bletrazer

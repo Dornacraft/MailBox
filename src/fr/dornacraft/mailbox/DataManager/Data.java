@@ -11,7 +11,7 @@ public abstract class Data {
 	private Timestamp creationDate;
 	private UUID uuid;
 	
-	public Data(Long id, UUID uuid, String author, String object, Timestamp creationDate) {
+	protected Data(Long id, UUID uuid, String author, String object, Timestamp creationDate) {
 		this.setId(id);
 		this.setUuid(uuid);
 		this.setAuthor(author);
@@ -19,10 +19,14 @@ public abstract class Data {
 		this.setCreationDate(creationDate);
 	}
 	
-	public Data(UUID uuid, String author, String object) {
+	protected Data(UUID uuid, String author, String object) {
 		this(null, uuid, author, object, null);
 	}
-
+	
+	protected Data() {
+		
+	}
+	
 	public Long getId() {
 		return id;
 	}
@@ -35,7 +39,7 @@ public abstract class Data {
 		return author;
 	}
 
-	private void setAuthor(String author) {
+	public void setAuthor(String author) {
 		this.author = author;
 	}
 
@@ -43,7 +47,7 @@ public abstract class Data {
 		return object;
 	}
 
-	private void setObject(String object) {
+	public void setObject(String object) {
 		this.object = object;
 	}
 
@@ -59,7 +63,7 @@ public abstract class Data {
 		return uuid;
 	}
 
-	private void setUuid(UUID uuid) {
+	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
 	}
 

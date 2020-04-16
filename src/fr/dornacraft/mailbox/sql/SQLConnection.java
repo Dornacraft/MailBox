@@ -8,10 +8,10 @@ import java.util.logging.Level;
 
 import fr.dornacraft.mailbox.Main;
 /**
- * Créer et gère la connexion avec la base de donnée (totalement pris de l'ancienne api)
+ * Crï¿½er et gÃ¨re la connexion avec la base de donnÃ©e (totalement pris de l'ancienne api)
  *
  */
-public class SQLConnection {//TODO déplacer cette classe vers l'api
+public class SQLConnection {
 	public static final String SGBD_TYPE_ROOT = "jdbc:mysql://";
 	private static SQLConnection instance = new SQLConnection();
 
@@ -25,10 +25,10 @@ public class SQLConnection {//TODO déplacer cette classe vers l'api
 	public static SQLConnection getInstance() {
 		return instance;
 	}
-
+	
 	public void connect(String jdbc, String host, String database, String user, String password) {
 		if (!isConnected()) {
-			Main.getInstance().getLogger().log(Level.INFO, "Tentative de connexion à la base de donnée.");
+			Main.getInstance().getLogger().log(Level.INFO, "Tentative de connexion Ã  la base de donnÃ©e.");
 			setJdbc(jdbc);
 			setHost(host);
 			setDatabase(database);
@@ -38,9 +38,9 @@ public class SQLConnection {//TODO déplacer cette classe vers l'api
 			try {
 				setConnection(DriverManager.getConnection(getJdbc() + getHost() + "/" + getDatabase(),
 						getUser(), getPassword()));
-				Main.getInstance().getLogger().log(Level.INFO, "Base de donnée connectée.");
+				Main.getInstance().getLogger().log(Level.INFO, "Base de donnÃ©e connectÃ©e.");
 			} catch (SQLException e) {
-				Main.getInstance().getLogger().log(Level.INFO, "Connexion à la base de donnée impossible.");
+				Main.getInstance().getLogger().log(Level.INFO, "Connexion Ã  la base de donnÃ©e impossible.");
 			}
 		}
 	}
@@ -49,7 +49,7 @@ public class SQLConnection {//TODO déplacer cette classe vers l'api
 		if (isConnected()) {
 			try {
 				getConnection().close();
-				Main.getInstance().getLogger().log(Level.INFO, "Base de donnée connectée.");
+				Main.getInstance().getLogger().log(Level.INFO, "Base de donnÃ©e connectÃ©e.");
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

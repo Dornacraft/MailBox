@@ -9,7 +9,6 @@ import org.bukkit.event.inventory.ClickType;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.SmartInventory;
-import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
 import fr.dornacraft.devtoolslib.smartinvs.content.Pagination;
 import fr.dornacraft.devtoolslib.smartinvs.content.SlotIterator;
@@ -19,9 +18,9 @@ import fr.dornacraft.mailbox.DataManager.DataManager;
 import fr.dornacraft.mailbox.DataManager.ItemData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
-import fr.dornacraft.mailbox.inventory.builders.InventoryBuilder;
+import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
 
-public class ItemInventory extends InventoryBuilder {
+public class ItemInventory extends InventoryProviderBuilder {
 	
 	public static Material RULES_MATERIAL = Material.WRITABLE_BOOK;
 	public static Material RECOVER_ALL_MATERIAl = Material.CHEST;
@@ -32,12 +31,12 @@ public class ItemInventory extends InventoryBuilder {
 	private DataManager dataManager = MailBoxController.getInstance().getDataManager();
 	
 	public ItemInventory(DataHolder dataSource) {
-		super("MailBox_Items", "§lMenu des objets", 5);
+		super("MailBox_Items", "Â§lMenu des objets", 5);
 		this.setDataSource(dataSource);
 	}
 	
-	public ItemInventory(DataHolder dataSource, InventoryBuilder parent) {
-		super("MailBox_Items", "§lMenu des objets", 5);
+	public ItemInventory(DataHolder dataSource, InventoryProviderBuilder parent) {
+		super("MailBox_Items", "Â§lMenu des objets", 5);
 		this.setDataSource(dataSource);
 		this.setParent(parent);
 		
@@ -46,7 +45,7 @@ public class ItemInventory extends InventoryBuilder {
 	private void dynamicContent(Player player, InventoryContents contents) {
 		List<ItemData> itemList = dataManager.getTypeData(this.getDataSource(), ItemData.class);
 		
-		itemList.sort(dataManager.compareByAscendingDate().reversed());
+		itemList.sort(dataManager.ascendingDateComparator().reversed());
 		
 		ClickableItem[] clickableItems = new ClickableItem[itemList.size()];
 		
@@ -68,9 +67,8 @@ public class ItemInventory extends InventoryBuilder {
 								}
 							} else {
 								if (clickType == ClickType.DROP || clickType == ClickType.CONTROL_DROP) {
-									Builder builder = DeletionDataInventory.builder(this.getDataSource(), dataId);
-									builder.parent(contents.inventory());
-									builder.build().open(player);
+									DeletionDataInventory inv = new DeletionDataInventory(this.getDataSource(), dataId, "Â§cÂ§lSupprimer l'objet ?", this);
+									inv.openInventory(player);
 
 								}
 							}
@@ -95,32 +93,30 @@ public class ItemInventory extends InventoryBuilder {
 		contents.fillRow(3, ClickableItem.empty(new ItemStackBuilder(MailBoxInventoryHandler.getInstance().BORDER_MATERIAL).setName(" ").build() ) );
 		
 		if(!pagination.isFirst() ) {
-			contents.set(4, 1, ClickableItem.of(new ItemStackBuilder(inventoryHandler.PAGINATION_MATERIAL).setName("Page précédente").build(), e -> inventory.open(player, pagination.previous().getPage())) );
+			contents.set(4, 1, ClickableItem.of(new ItemStackBuilder(inventoryHandler.PAGINATION_MATERIAL).setName("Â§fÂ§lPage prÃ©cÃ©dente").build(), e -> inventory.open(player, pagination.previous().getPage())) );
 		}
 		
 		if(!this.getDataSource().getOwnerUuid().equals(player.getUniqueId())) { //TODO add permission delete all other
-			contents.set(4,  4, ClickableItem.of(new ItemStackBuilder(inventoryHandler.DELETE_ALL_MATERIAL).setName("§4§lVider la boite").build(), e -> {
+			contents.set(4,  4, ClickableItem.of(new ItemStackBuilder(inventoryHandler.DELETE_ALL_MATERIAL).setName("Â§4Â§lVider la boÃ®te").build(), e -> {
 				List<ItemData> dataList = dataManager.getTypeData(this.dataSource, ItemData.class);
 				List<Long> listDataId = new ArrayList<>();
 				for(ItemData data : dataList) {
 					listDataId.add(data.getId());
 				}
 				
-				Builder builder = DeletionDatasInventory.builder(this.dataSource, listDataId, "§c§lSupprimer les "+ listDataId.size() +" objets ?");
-				builder.parent(contents.inventory());
-				SmartInventory deletionInventory = builder.build();
-				deletionInventory.open(player);
+				DeletionDatasInventory deletionDatasInventory = new DeletionDatasInventory(this.dataSource, listDataId, "Â§4Â§lSupprimer les " + listDataId.size() +" objets ?", this);
+				deletionDatasInventory.openInventory(player);
 			}));
 		}
 		
-		contents.set(4,  3, ClickableItem.empty(new ItemStackBuilder(RULES_MATERIAL).setName("§e§lRappel")
-				.addLore("Le stockage de ressources via la boîte")
-				.addLore("de réception par l'intermédiaire de")
-				.addLore("l'HDV est interdit. Afin de prévenir et")
-				.addLore("sanctionner toute tentative, un contrôle")
-				.addLore("strict est effectué régulièrement et les")
-				.addLore("dispositions nécessaires seront prises")
-				.addLore("en cas d'abus (cf. règlement).")
+		contents.set(4,  3, ClickableItem.empty(new ItemStackBuilder(RULES_MATERIAL).setName("Â§eÂ§lRappel")
+				.addLore("Le stockage de ressources via la boÃ®te")
+				.addLore("de rÃ©ception par l'intermÃ©diaire de")
+				.addLore("l'HDV est interdit. Afin de prÃ©venir et")
+				.addLore("sanctionner toute tentative, un contrÃ´le")
+				.addLore("strict est effectuÃ© rÃ©guliÃ¨rement et les")
+				.addLore("dispositions nÃ©cessaires seront prises")
+				.addLore("en cas d'abus (cf. rÃ©glement).")
 				.build()
 				)
 			);
@@ -140,7 +136,7 @@ public class ItemInventory extends InventoryBuilder {
 	}
 	
 	private ClickableItem generateRecoverAll(Player player, InventoryContents contents) {
-		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(RECOVER_ALL_MATERIAl).setName("§eTout récupérer.");
+		ItemStackBuilder itemStackBuilder = new ItemStackBuilder(RECOVER_ALL_MATERIAl).setName("Â§eÂ§lTout rÃ©cupÃ©rÃ©");
 
 		return ClickableItem.of(itemStackBuilder.build(), e -> {
 			if(this.getDataSource().getOwnerUuid().equals(player.getUniqueId())) {//TODO permission take all other

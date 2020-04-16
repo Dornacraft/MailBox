@@ -7,7 +7,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 /**
- * Décharge de la mémoire les données des joueurs lors de leurs déconnexions
+ * DÃ©charge de la mÃ©moire les donnÃ©es des joueurs lors de leurs dÃ©connexion
  * @author Bletrazer
  *
  */
@@ -17,6 +17,7 @@ public class QuitListener implements Listener {
 	private void onQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		MailBoxController.getInstance().getDataManager().getCache().remove(player.getUniqueId());
+		
 	}
 	
 }

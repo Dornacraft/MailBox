@@ -11,6 +11,7 @@ import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.command.Cmd_mailbox;
 import fr.dornacraft.mailbox.listeners.JoinListener;
 import fr.dornacraft.mailbox.listeners.QuitListener;
+import fr.dornacraft.mailbox.playerManager.PlayerManager;
 import fr.dornacraft.mailbox.sql.SQLConnection;
 
 public class Main extends JavaPlugin {
@@ -46,7 +47,7 @@ public class Main extends JavaPlugin {
 			InventoryManager manager = new InventoryManager(this);
 			manager.init();
 			builder = SmartInventory.builder().manager(manager);
-			
+			PlayerManager.getInstance().init();
 	
 			
 			this.getCommand("mailbox").setExecutor(new Cmd_mailbox());
@@ -55,7 +56,7 @@ public class Main extends JavaPlugin {
 			MailBoxController.getInstance().initialize();
 			
 		} else {
-			this.getLogger().log(Level.SEVERE, "Le plugin a besoin d'un connexion une base de donnée pour fonctionner");
+			this.getLogger().log(Level.SEVERE, "Le plugin a besoin d'un connexion une base de donnÃ©e pour fonctionner");
 		}
 
 	}
@@ -68,6 +69,7 @@ public class Main extends JavaPlugin {
 	private void registerListeners() {
 		this.getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		this.getServer().getPluginManager().registerEvents(new QuitListener(), this);
+		
 	}
 
 }

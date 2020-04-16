@@ -9,12 +9,14 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
 import fr.dornacraft.mailbox.ItemStackBuilder;
+import fr.dornacraft.mailbox.DataManager.factories.DataFactory;
+import fr.dornacraft.mailbox.playerManager.PlayerInfo;
+import fr.dornacraft.mailbox.playerManager.PlayerManager;
 import fr.dornacraft.mailbox.sql.DataSQL;
 import fr.dornacraft.mailbox.sql.ItemDataSQL;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
@@ -33,7 +35,7 @@ public class MailBoxController {
 	
 	/**
 	 * @param player joueyur cible
-	 * @return un DataHolder avec les données du joueur cible trouvés directement depuis la base de donnée.
+	 * @return un DataHolder avec les donnï¿½es du joueur cible trouvï¿½s directement depuis la base de donnï¿½e.
 	 */
 	private DataHolder getHolderFromDataBase(UUID uuid) {// ajout par rapport au diagramme
 		DataHolder res = new DataHolder(uuid, new ArrayList<>());
@@ -54,7 +56,7 @@ public class MailBoxController {
 		return res;
 	}
 	
-	//charge en mémoire les donée de associé a l'uuid en parametre
+	//charge en mï¿½moire les donï¿½e de associÃ© a l'uuid en parametre
 	public void load(UUID uuid) {
 		dataManager.getCache().put(uuid, getHolderFromDataBase(uuid) );
 	}
@@ -67,7 +69,7 @@ public class MailBoxController {
 	}
 	
 	/**
-	 * trouve le dataHolder associé a l'uuid donnée
+	 * trouve le dataHolder associï¿½ a l'uuid donnï¿½e
 	 */
 	public DataHolder getDataHolder(UUID uuid) {
 		DataHolder res = dataManager.getDataHolder(uuid);
@@ -78,9 +80,30 @@ public class MailBoxController {
 		
 		return res;
 	}
+	
+	public void sendLetter(LetterData letterData) {
+		LetterData temp = LetterDataSQL.getInstance().create(letterData);
 
-	public void sendLetter(OfflinePlayer recipient, ItemStack book) {//FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
-		if (recipient != null) {
+		if(temp != null) {
+			DataHolder holder = dataManager.getDataHolder(temp.getUuid());
+			if (holder != null) {
+				holder.addData(temp);
+			}
+			
+			//notification
+			Player recipient = Bukkit.getPlayer(temp.getUuid() );
+			
+			if(recipient != null) {
+				recipient.getPlayer().sendMessage("Vous avez reÃ§u un lettre de la part de " + letterData.getAuthor() );
+			}
+		} else {
+			//TODO null pointer (erreur d'acces a la BDD
+		}
+		
+	}
+	
+	public void sendLetter(UUID recipientUuid, ItemStack book) {//FIXME changer player par UUID ? TODO modifier parametres -> ajouter lettertype
+		if (recipientUuid != null) {
 			if (book.getType() == Material.WRITTEN_BOOK && book.hasItemMeta() && book.getItemMeta() instanceof BookMeta) {
 				BookMeta bookMeta = (BookMeta) book.getItemMeta();
 
@@ -88,19 +111,10 @@ public class MailBoxController {
 				String object = bookMeta.getTitle();
 				List<String> content = bookMeta.getPages();
 
-				Data data = new DataFactory(recipient.getUniqueId(), author, object);
+				Data data = new DataFactory(recipientUuid, author, object);
 				LetterData letterData = new LetterData(data, LetterType.STANDARD, content, false);
 				
-				
-				DataHolder holder = dataManager.getDataHolder(recipient.getUniqueId());
-				if (holder != null) {
-					holder.addData(letterData);
-				}
-				
-				LetterDataSQL.getInstance().create(letterData);
-				if(recipient.getPlayer() != null) {
-					recipient.getPlayer().sendMessage("Vous avez reçu un lettre de la part de " + author);
-				}
+				sendLetter(letterData);
 			}
 		}
 	}
@@ -111,12 +125,12 @@ public class MailBoxController {
 	
 	public ItemStack getBookView(LetterData letterData) {
 		StringBuilder letterHead = new StringBuilder();
-		letterHead.append(String.format("§lAuteur(e):§r %s\n", letterData.getAuthor()));
+		letterHead.append(String.format("Â§eÂ§lAutheur(e):Â§r %s\n", letterData.getAuthor()));
 		
-		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
+		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy Ã  HH:mm:ss");
 		
-		letterHead.append(String.format("§lDate de réçéption:§r\n - %s\n", sdf.format(letterData.getCreationDate()) ));
-		letterHead.append(String.format("§lObjet:§r %s\n", letterData.getObject() ));
+		letterHead.append(String.format("Â§eÂ§lDate de rÃ©cÃ©ption:Â§r %s\n", sdf.format(letterData.getCreationDate()) ));
+		letterHead.append(String.format("Â§eÂ§lObject:\n - %sÂ§r\n", letterData.getObject() ) );
 		
 		ItemStack book = new ItemStackBuilder(Material.WRITTEN_BOOK).build();
 		BookMeta bookMeta = (BookMeta) book.getItemMeta();
@@ -129,15 +143,13 @@ public class MailBoxController {
 		bookMeta.setTitle(letterData.getObject());
 		
 		book.setItemMeta(bookMeta);
+		System.out.println("here");
 		
 		return book;
-		
 	}
 	
 	/**
-	 * Envoie le contenue de la lettre au joueur cible et la marque comme ayant été lu
-	 * @param player joueur cible
-	 * @param id l iD de la lettre a afficher dans le chat
+	 * Envoie le contenue de la lettre au joueur cible et la marque comme ayant Ã©tÃ© lu si le joueur est aussi le destinataire
 	 */
 	public void readLetter(Player player, LetterData letterData) {
 		player.openBook(getBookView(letterData));
@@ -208,23 +220,27 @@ public class MailBoxController {
 			ItemDataSQL.getInstance().delete((ItemData) data);
 		}
 	}
-
-	public void sendItem(OfflinePlayer recipient, ItemStack itemstack) {
-		if (recipient != null) {
-			Data data = new DataFactory(recipient.getUniqueId(), recipient.getName(), "object hard code"); //TODO parametrize author
-			ItemData itemData = new ItemData(data, itemstack, Duration.ofSeconds(20));// TODO parametrize duration sur les items
-			ItemDataSQL.getInstance().create(itemData);
+	
+	public void sendItem(String recipient, ItemStack itemstack, Duration d) {
+		PlayerInfo playerInfo = PlayerManager.getInstance().getPlayerInfo(recipient);
+		
+		if (playerInfo != null) {
+			Data data = new DataFactory(playerInfo.getUuid(), recipient, "object hard code"); //TODO parametrize author
+			ItemData temp = ItemDataSQL.getInstance().create(new ItemData(data, itemstack, d) );
 			
-			DataHolder pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
-			if(pHolder == null) {
-				getDataManager().getCache().put(recipient.getUniqueId(), new DataHolder(recipient.getUniqueId(), new ArrayList<Data>()));
-				pHolder = getDataManager().getDataHolder(recipient.getUniqueId());
-			}
-			
-			pHolder.addData(itemData);
-			if(recipient.getPlayer() != null) {
-				recipient.getPlayer().sendMessage("Vous avez reçu un objet de la part de " + recipient.getName());
+			if(temp != null) {
+				DataHolder rHolder = getDataManager().getDataHolder(playerInfo.getUuid());
+				if(rHolder != null) {
+					rHolder.addData(temp);
+				}
 				
+				Player p = Bukkit.getPlayer(playerInfo.getUuid());
+				if(p != null) {
+					p.sendMessage("Vous avez reÃ§u un objet de la part de " + playerInfo.getName() );
+					
+				}
+			} else {
+				//TODO return false
 			}
 		}
 	}

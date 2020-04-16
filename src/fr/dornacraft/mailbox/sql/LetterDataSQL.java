@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import fr.dornacraft.mailbox.DataManager.Data;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.LetterType;
+import fr.dornacraft.mailbox.DataManager.factories.LetterDataFactory;
 
 public class LetterDataSQL extends DAO<LetterData> {
 	private static final String TABLE_NAME = "MailBox_LetterData";
@@ -35,20 +36,25 @@ public class LetterDataSQL extends DAO<LetterData> {
 	}
 	
 	/**
-	 * Transforme une liste de string en string unique et les sépare par un "\n"
+	 * Transforme une liste de string en string unique et les sï¿½pare par un "\n"
 	 */
 	public String toText(List<String> list) {
 		StringBuilder sb = new StringBuilder();
-
-		for (String page : list) {
-			sb.append(String.format("%s#-#", page == null || page.isEmpty() ? " " : page));
+		String res = "";
+		
+		if(list != null) {
+			for (String page : list) {
+				sb.append(String.format("%s#-#", page == null || page.isEmpty() ? " " : page));
+			}
+			res = sb.toString();
+			
 		}
-
-		return sb.toString();
+		
+		return res;
 	}
 	
 	/**
-	 * Transforme un String en List en utilisant "\n" comme séparateur
+	 * Transforme un String en List en utilisant "\n" comme sï¿½parateur
 	 */
 	private List<String> fromText(String str) {
 		return Arrays.asList(StringUtils.split(str, "#-#"));
@@ -59,25 +65,32 @@ public class LetterDataSQL extends DAO<LetterData> {
 	 * [id: int] [type: String(LetterType name)] [content: String] [isRead: Boolean]
 	 * 
 	 */
-
+	
 	@Override
 	public LetterData create(LetterData obj) {
 		LetterData res = null;
 
 		try {
-			Data data = DataSQL.getInstance().create(obj);
-			obj.setId(data.getId());
-
-			PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " VALUES(?, ?, ?, ?)");
-			query.setLong(1, obj.getId());
-			query.setString(2, obj.getLetterType().name());
-			query.setString(3, toText(obj.getContent()));
-			query.setBoolean(4, obj.getIsRead());
-
-			query.execute();
-			query.close();
-			res = obj;
-
+			LetterData temp = obj.clone();
+			Data data = DataSQL.getInstance().create(temp);
+			
+			if(data != null) {
+				temp.setId(data.getId());
+				temp.setCreationDate(data.getCreationDate());
+	
+				PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " VALUES(?, ?, ?, ?)");
+				query.setLong(1, temp.getId());
+				query.setString(2, temp.getLetterType().name());
+				query.setString(3, toText(temp.getContent()));
+				query.setBoolean(4, temp.getIsRead());
+	
+				query.execute();
+				query.close();
+				
+				res = temp;
+			} else {
+				//TODO logg data null
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -108,7 +121,7 @@ public class LetterDataSQL extends DAO<LetterData> {
 				Boolean isRead = resultset.getBoolean("isRead");
 
 				if (data != null) {
-					res = new LetterData(data, type, content, isRead);
+					res = new LetterDataFactory(data, type, content, isRead);
 
 				}
 

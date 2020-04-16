@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 import fr.dornacraft.mailbox.DataManager.Data;
-import fr.dornacraft.mailbox.DataManager.DataFactory;
+import fr.dornacraft.mailbox.DataManager.factories.DataFactory;
 
 
 public class DataSQL extends DAO<Data> {
@@ -45,7 +45,7 @@ public class DataSQL extends DAO<Data> {
 	 */
 	
 	/**
-	 * RÈcupËre la liste de Data associÈ a l'uuid en parametre
+	 * R√©cup√®re la liste de data associ√© a l'uuid en param√®tre
 	 */
 	public List<Data> getDataList(UUID uuid){
 		List<Data> res = new ArrayList<>();
@@ -82,22 +82,22 @@ public class DataSQL extends DAO<Data> {
 		Data res = null;
 		
 		try {
-			obj.setCreationDate(Timestamp.from(Instant.now()));
+			DataFactory temp = new DataFactory(null, obj.getUuid(), obj.getAuthor(), obj.getObject(), Timestamp.from(Instant.now()));
 			PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " (uuid, author, object, creationDate) VALUES(?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-			query.setString(1, obj.getUuid().toString());
-			query.setString(2, obj.getAuthor());
-			query.setString(3, obj.getObject());
-			query.setTimestamp(4, obj.getCreationDate());
+			query.setString(1, temp.getUuid().toString());
+			query.setString(2, temp.getAuthor());
+			query.setString(3, temp.getObject());
+			query.setTimestamp(4, temp.getCreationDate());
 
 			query.execute();
 
 			ResultSet tableKeys = query.getGeneratedKeys();
 			if(tableKeys.next()) {
-				obj.setId(tableKeys.getLong(1));
+				temp.setId(tableKeys.getLong(1));
 			}
 			
 			query.close();
-			res = obj;
+			res = temp;
 
 		} catch (SQLException e) {
 			e.printStackTrace();

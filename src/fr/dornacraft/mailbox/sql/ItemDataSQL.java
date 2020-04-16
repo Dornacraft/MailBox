@@ -89,17 +89,25 @@ public class ItemDataSQL extends DAO<ItemData>{
 		ItemData res = null;
 
 		try {
-			Data data = DataSQL.getInstance().create(obj);
-			obj.setId(data.getId());
+			ItemData temp = obj.clone();
+			Data data = DataSQL.getInstance().create(temp);
 			
-			PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " (id, durationInSeconds, itemStack) VALUES(?, ?, ?)");
-			query.setLong(1, obj.getId());
-			query.setLong(2, obj.getDuration().getSeconds());
-			query.setString(3, toBase64(obj.getItem()));
-			
-			query.execute();
-			query.close();
-			res = obj;
+			if(data != null) {
+				temp.setId(data.getId());
+				temp.setCreationDate(data.getCreationDate());
+				
+				PreparedStatement query = super.getConnection().prepareStatement("INSERT INTO " + TABLE_NAME + " (id, durationInSeconds, itemStack) VALUES(?, ?, ?)");
+				query.setLong(1, temp.getId());
+				query.setLong(2, temp.getDuration().getSeconds());
+				query.setString(3, toBase64(temp.getItem()));
+				
+				query.execute();
+				query.close();
+				res = temp;
+				
+			} else {
+				//TODO logg data null
+			}
 
 		} catch (SQLException e) {
 			e.printStackTrace();

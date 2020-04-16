@@ -1,16 +1,15 @@
 package fr.dornacraft.mailbox.DataManager;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class LetterData extends Data {
 
-	private List<String> content = new ArrayList<>();
+	private List<String> content;
 	private LetterType letterType;
 	private Boolean isRead;
 
-	public LetterData(UUID uuid, String author, String object, LetterType letterType, List<String> content, Boolean isRead) {
+	protected LetterData(UUID uuid, String author, String object, LetterType letterType, List<String> content, Boolean isRead) {
 		super(uuid, author, object);
 		this.setLetterType(letterType);
 		this.setContent(content);
@@ -18,7 +17,7 @@ public class LetterData extends Data {
 		
 	}
 	
-	public LetterData(Data data, LetterType type, List<String> content, Boolean isRead) {
+	protected LetterData(Data data, LetterType type, List<String> content, Boolean isRead) {
 		super(data.getId(), data.getUuid(), data.getAuthor(), data.getObject(), data.getCreationDate());
 		this.setCreationDate(data.getCreationDate());
 		this.setLetterType(type);
@@ -26,12 +25,16 @@ public class LetterData extends Data {
 		this.setIsRead(isRead);
 		
 	}
+	
+	protected LetterData() {
+		
+	}
 
 	public List<String> getContent() {
 		return content;
 	}
 
-	private void setContent(List<String> content) {
+	public void setContent(List<String> content) {
 		this.content = content;
 	}
 
@@ -39,7 +42,7 @@ public class LetterData extends Data {
 		return letterType;
 	}
 
-	private void setLetterType(LetterType letterType) {
+	public void setLetterType(LetterType letterType) {
 		this.letterType = letterType;
 	}
 
