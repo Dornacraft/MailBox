@@ -1,13 +1,14 @@
 package fr.dornacraft.mailbox.DataManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class LetterData extends Data {
 
-	private List<String> content;
-	private LetterType letterType;
-	private Boolean isRead;
+	private List<String> content = new ArrayList<>();
+	private LetterType letterType = LetterType.STANDARD;
+	private Boolean isRead = false;
 
 	protected LetterData(UUID uuid, String author, String object, LetterType letterType, List<String> content, Boolean isRead) {
 		super(uuid, author, object);

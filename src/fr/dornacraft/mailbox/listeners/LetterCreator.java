@@ -2,19 +2,18 @@ package fr.dornacraft.mailbox.listeners;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.inventory.InventoryView;
 
 import fr.dornacraft.mailbox.Main;
 import fr.dornacraft.mailbox.DataManager.Data;
@@ -24,176 +23,194 @@ import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.DataManager.factories.DataFactory;
 import fr.dornacraft.mailbox.DataManager.factories.LetterDataFactory;
 import fr.dornacraft.mailbox.inventory.providers.PlayerSelectorInventory;
-import fr.dornacraft.mailbox.playerManager.PlayerManager;
+import fr.dornacraft.mailbox.inventory.providers.utils.AuthorFilter;
+import fr.dornacraft.mailbox.playerManager.PlayerInfo;
 
 public class LetterCreator implements Listener {
 	
+	private static Map<UUID, LetterCreator> map = new HashMap<>();
+	
 	private UUID uuid;
-	private LetterDataFactory letterFactory;
-	private List<String> recipients = new ArrayList<>();
-	private Boolean[] steps = new Boolean[] {false, false, false};
-	private PlayerSelectorInventory playerSelectorInventory = null;
+	private AuthorFilter recipients = new AuthorFilter();
+	private String object;
+	private List<String> content;
 	
-	public LetterCreator(UUID uuid) {
-		this.setUuid(uuid);
-	}
-	
-	public void start() {
-		Player player = Bukkit.getPlayer(this.getUuid());
-		
-		if(player != null) {
-			Main.getInstance().getServer().getPluginManager().registerEvents(new LetterCreator(this.getUuid()), Main.getInstance());
-			player.sendMessage("Vous pouvez a tout moment annuler la création de lettre en envoyant #stop");
-			player.sendMessage("Quel est l'objet de la lettre ?");
-
-		}
+	/* * * * * * * * * * * * * * * * *
+	 * * * * constructor(s) * * * * *
+	 * * * * * * * * * * * * * * * */
+	public LetterCreator(Player player) {
+		this.setUuid(player.getUniqueId());
 		
 	}
 	
-	public void stop(){
+	
+	/* * * * * * * * * * * * * * * * *
+	 * * * * * manipulation * * * * *
+	 * * * * * * * * * * * * * * * */
+	public void startCreation(Player player) {
+		this.getMap().put(this.getUuid(), this);
+		player.sendMessage("Vous pouvez annuler a tout moment en envoyant #stop");
+		Main.getInstance().getServer().getPluginManager().registerEvents(this, Main.getInstance());
+		this.next(player);
+		
+	}
+	
+	public void stopCreation() {
+		this.getMap().remove(this.getUuid());
 		AsyncPlayerChatEvent.getHandlerList().unregister(this);
-		InventoryCloseEvent.getHandlerList().unregister(this);
-
 	}
 	
-	private void stepObject(Player player, String msg) {
-		if(msg.length() <= 100) {
-			letterFactory.setObject(msg);
-			player.sendMessage("Objet de la lettre: \"" + msg + "\".");
-			player.sendMessage("Quel est votre message ?");
-			this.steps[0] = true;
-			
-		} else {
-			player.sendMessage("L'objet précisé est trop long. Longeur max: 100");
-			player.sendMessage("Quel est l'objet de la lettre ?");
-			
-		}
+	private void next(Player player) {
+		Bukkit.getScheduler().runTask(Main.getInstance(), e -> {
+			player.chat("###");
+		});
 	}
 	
-	private void stepContent(Player player, String msg) {
-		if(msg.length() <= 300 ) {
-			letterFactory.setContent(Arrays.asList(new String[] {msg}));
-			player.sendMessage("Contenue de la lettre:\n - \"" + msg + "\".");
-			
-			this.stepRecipients(player);
-
-			this.steps[1] = true;
-			
-		} else {
-			player.sendMessage("Contenue précisé trop long. Longeur max: 300");
-			player.sendMessage("Quel est votre message ?");
-			
-		}
-		
-	}
-	
-	private void stepRecipients(Player player) {
-		if(this.getPlayerSelectorInventory() == null) {
-			this.setPlayerSelectorInventory(new PlayerSelectorInventory(this.getRecipients(), "§lA qui envoyer la lettre ?"));
-		}
-		this.getPlayerSelectorInventory().openInventory(player);
-		
-		this.steps[2] = true;
-	}
-	
-	private void stepRecap(Player player) {
-		if(this.getRecipients().size() > 1) {
-			letterFactory.setLetterType(LetterType.ANNOUNCE);
-			
-		} else {
-			letterFactory.setLetterType(LetterType.STANDARD);
-		}
-		
+	private void sendRecap(Player player, Boolean shownextStep) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\n");
-		sb.append(String.format("§e§lAutheur:§r %s\n", letterFactory.getAuthor()));
-		sb.append(String.format("§e§lObjet:§r %s\n", letterFactory.getObject()));
-		sb.append(String.format("§e§lMessage:§r\n - %s\n", letterFactory.getContent().toString().replace("[", "").replace("]", "") ) );
-		sb.append("\n");
 		
-		sb.append("§6§oEcrivez \"#send\" pour envoyer la lettre ou \"#stop\" pour tout annuler.");
+		sb.append("§l§n§eRécapitulation:§r\n");
+		sb.append("§8Objet:§r " + this.getObject() + "\n");
+		sb.append("§8Destinataires:§r " + this.getRecipients().getPreview() + "\n");
+		sb.append("§8Message:§r\n" + StringUtils.join(this.getContent(), " ") + "\n");
+		
+		if(shownextStep ) {
+			sb.append("§o§6Pour envoyer votre mail écrivez \"send\".");
+		}
+		
 		player.sendMessage(sb.toString());
-		
-	}
-	
-	private void stepSend(Player player) {
-		LetterData toSend = letterFactory.clone();
-		player.sendMessage("Vous avez envoyer une lettre");
-		
-		for(String name : this.getRecipients() ) {
-			toSend.setUuid(PlayerManager.getInstance().getUUID(name));
-			MailBoxController.getInstance().sendLetter(toSend);
-		}
-		
-	}
-	
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	private void onLetterCreation(AsyncPlayerChatEvent event) {
-		Player ePlayer = event.getPlayer();
-		Player tPlayer = Bukkit.getPlayer(this.getUuid());
-		
-		if (tPlayer != null && ePlayer.equals(tPlayer) ) {
-			event.setCancelled(true);
-			String msg = event.getMessage();
-
-			if (msg.equalsIgnoreCase("#stop") ) {
-				ePlayer.sendMessage("Arret du mode de création de lettre.");
-				this.stop();
-				return;
-			}
-			
-			if(letterFactory == null) {
-				Data data = new DataFactory(null, ePlayer.getName(), null);
-				letterFactory = new LetterDataFactory(data, LetterType.STANDARD, new ArrayList<>(), false);
-				
-			}
-			
-			if (!this.steps[0]) {
-				this.stepObject(ePlayer, msg);
-				
-			} else if(!this.steps[1]) {
-				this.stepContent(ePlayer, msg);
-				
-			} else if(!this.steps[2]) {
-				this.stepRecipients(ePlayer);
-				
-			} else if(msg.equals("#send") ) {
-				this.stepSend(ePlayer);
-				this.stop();
-			}
-		}
 	}
 	
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	private void onInventoryClose(InventoryCloseEvent event) {
-		HumanEntity he = event.getPlayer();
-
-		if(he instanceof Player) {
-			Player player = (Player) he;
+	private void onLetterCreation(AsyncPlayerChatEvent event) {
+		event.setCancelled(true);
+		Player ePlayer = event.getPlayer();
+		String eMessage = event.getMessage();
+		
+		if(this.isCreatingLetter(ePlayer) ) {
+			if(eMessage.contentEquals("#stop")) {
+				ePlayer.sendMessage("Vous avez quitté le mode de creation de lettre.");
+				this.stopCreation();
+				return;
+			}
 			
-			if(this.getUuid().equals(player.getUniqueId()) ) {
-				InventoryView view = event.getView();
+			if(eMessage.equals("#recap")) {
+				this.sendRecap(ePlayer, false);
+				return;
 				
-				if(view.getType() == InventoryType.CHEST && view.getTitle().equals("§lA qui envoyer la lettre ?") && this.getPlayerSelectorInventory().getFinalClose() ) {
-					if(!this.getRecipients().isEmpty() ) {
-						this.stepRecap(player);
-						
-					} else {
-						player.sendMessage("§cVous devez choisir au moins un destinaire.");
-						this.getPlayerSelectorInventory().openInventory(player);
-						
-					}
-					
+			}
+			
+			if(!eMessage.contains(" ") && eMessage.startsWith("clear#")) {
+				eMessage = eMessage.toLowerCase();
+				if (eMessage.contains("#1") || eMessage.contains("#objet") || eMessage.contains("#o")) {
+					this.reObject(ePlayer);
+					return;
+	
+				} else if (eMessage.contains("#2") || eMessage.contains("#message") || eMessage.contains("#m")) {
+					this.reContent(ePlayer);
+					return;
+	
+				} else if (eMessage.contains("#3") || eMessage.contains("#destinataire") || eMessage.contains("#d")) {
+					this.reRecipients(ePlayer);
+					return;
 				}
+			}
+			
+			if(this.getObject() == null) {
+				ePlayer.sendMessage("Quel est l'objet de la lettre ?");
+				this.setObject("");
+				
+			} else if(this.getObject().isEmpty() ) {
+				if(!eMessage.equals("###")) {
+					this.setObject(eMessage);
+					ePlayer.sendMessage("l'objet de la lettre seras: " + this.getObject() + "\"." );
+					this.next(ePlayer);
+				}
+				
+			} else if (this.getContent() == null ) {
+				ePlayer.sendMessage("Quel est votre message ?");
+				this.setContent(new ArrayList<>());
+				
+			} else if (this.getContent().isEmpty() ) {
+				if(!eMessage.equals("###")) {
+					this.setContent(Arrays.asList(new String[] {eMessage}));
+					ePlayer.sendMessage("Le message seras: \"" + this.getContent() + "\"." );
+					this.next(ePlayer);
+				}
+				
+			} else if (this.getRecipients().getList().isEmpty() ) {
+				PlayerSelectorInventory pci = new PlayerSelectorInventory(this.getRecipients(), "§lChoisissez votre/vos cible");
+				pci.setDefinitiveQuit(e -> {
+					this.next(ePlayer);
+				});
+				pci.openInventory(ePlayer);
+				
+			} else if(eMessage.equals("send") ){	
+				Data data = new DataFactory(null, ePlayer.getName(), this.getObject());
+				LetterData letterData = new LetterDataFactory(data, LetterType.STANDARD, this.getContent(), false);//FIXME
+				
+				for(PlayerInfo pi : this.getRecipients().getList() ) {//FIXME si l'envoie echoue, ne pas faire le reste
+					LetterData toSend = letterData.clone();
+					toSend.setUuid(pi.getUuid() );
+					MailBoxController.getInstance().sendLetter(toSend);
+				}
+				
+				ePlayer.sendMessage("Vous avez envoyer une lettre à: " + this.getRecipients().getPreview() );
+				this.stopCreation();
+				
+			} else {
+				this.sendRecap(ePlayer, true);
 			}
 		}
 	}
 	
-	public List<String> getRecipients() {
+	private void reObject(Player player) {
+		if(this.getContent() != null && this.getContent().isEmpty() ) {
+			this.setContent(null);
+		}
+		this.setObject(null);
+		player.sendMessage("Objet supprimé.");
+		this.next(player);
+		
+	}
+	
+	private void reContent(Player player) {
+		if(this.getObject() != null && this.getObject().isEmpty() ) {
+			this.setObject(null);
+		}
+		
+		this.setContent(null);
+		
+		player.sendMessage("Message supprimé.");
+		this.next(player);
+	}
+	
+	private void reRecipients(Player player) {
+		if(this.getObject() != null && this.getObject().isEmpty() ) {
+			this.setObject(null);
+		}
+		if(this.getContent() != null && this.getContent().isEmpty() ) {
+			this.setContent(null);
+		}
+		
+		this.setRecipients(new AuthorFilter());
+		
+		player.sendMessage("Destinaire(s) supprimé(s).");
+		this.next(player);
+	}
+	
+	public Boolean isCreatingLetter(Player player) {
+		return this.getMap().containsKey(player.getUniqueId());
+	}
+	
+	/* * * * * * * * * * * * * * * * 
+	 * * * setters * getters * * * *
+	 * * * * * * * * * * * * * * * */
+	public AuthorFilter getRecipients() {
 		return recipients;
 	}
 
-	public void setRecipients(List<String> recipients) {
+	public void setRecipients(AuthorFilter recipients) {
 		this.recipients = recipients;
 	}
 
@@ -205,11 +222,28 @@ public class LetterCreator implements Listener {
 		this.uuid = uuid;
 	}
 
-	public PlayerSelectorInventory getPlayerSelectorInventory() {
-		return playerSelectorInventory;
+	private Map<UUID, LetterCreator> getMap() {
+		return map;
 	}
 
-	public void setPlayerSelectorInventory(PlayerSelectorInventory playerSelectorInventory) {
-		this.playerSelectorInventory = playerSelectorInventory;
+
+	public String getObject() {
+		return object;
 	}
+
+
+	public void setObject(String object) {
+		this.object = object;
+	}
+
+
+	public List<String> getContent() {
+		return content;
+	}
+
+
+	public void setContent(List<String> content) {
+		this.content = content;
+	}
+
 }

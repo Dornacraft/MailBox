@@ -15,8 +15,7 @@ public class PlayerInfo {
 	}
 	
 	public PlayerInfo(Player player) {
-		this.setName(player.getName());
-		this.setUuid(player.getUniqueId());
+		this(player.getName(), player.getUniqueId());
 	}
 
 	public UUID getUuid() {
@@ -33,6 +32,27 @@ public class PlayerInfo {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public Boolean isComplete() {
+		return this.getName() != null && this.getUuid() != null;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		Boolean res = false;
+		
+		if(obj instanceof PlayerInfo) {
+			PlayerInfo pi = (PlayerInfo) obj;
+			
+			if(this.getName().equals(pi.getName()) && this.getUuid().equals(pi.getUuid()) ) {
+				res = true;
+			}
+			
+		}
+		
+		
+		return res;
 	}
 	
 }

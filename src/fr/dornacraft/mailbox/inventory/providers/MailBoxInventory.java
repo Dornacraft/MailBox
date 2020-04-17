@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 
 import fr.dornacraft.devtoolslib.smartinvs.ClickableItem;
 import fr.dornacraft.devtoolslib.smartinvs.content.InventoryContents;
@@ -43,13 +44,25 @@ public class MailBoxInventory extends InventoryProviderBuilder {
 			ItemStack cursor = e.getCursor();
 			
 			if (click == ClickType.LEFT ) {
-				if(cursor.getType() == Material.BOOK ) { // avancé
+				if(cursor.getType() == Material.WRITTEN_BOOK && cursor.hasItemMeta() ) { // avancé
+					BookMeta meta = (BookMeta) cursor.getItemMeta();
 					
+					if(meta.getPages() != null && !meta.getPages().isEmpty() ) {
+						player.closeInventory();
+						LetterCreator creator = new LetterCreator(player);
+						creator.setContent(meta.getPages() );
+						creator.startCreation(player);
+						
+					} else {
+						
+						
+					}
 				} else {//simple
 					player.closeInventory();
-					LetterCreator creator = new LetterCreator(player.getUniqueId());
-					creator.start();
+					LetterCreator creator = new LetterCreator(player);
+					creator.startCreation(player);
 				}
+				
 				
 			}
 		}));

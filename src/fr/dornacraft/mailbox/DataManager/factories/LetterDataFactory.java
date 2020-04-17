@@ -18,9 +18,11 @@ public class LetterDataFactory extends LetterData {
 	}
 	
 	public void setData(Data data) {
-		this.setUuid(data.getUuid() );
+		this.setId(data.getId());
 		this.setAuthor(data.getAuthor() );
 		this.setObject(data.getObject() );
+		this.setCreationDate(data.getCreationDate());
+		this.setUuid(data.getUuid() );
 	}
 	
 }
