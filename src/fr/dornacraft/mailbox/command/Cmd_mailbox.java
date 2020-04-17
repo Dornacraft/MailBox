@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -34,39 +35,46 @@ public class Cmd_mailbox implements CommandExecutor {
 			if (args.length == 4) {
 				if(args[0].equalsIgnoreCase("item")) {
 					if(args[1].equalsIgnoreCase("send")) {
-						PlayerInfo rPlayerInfo = PlayerManager.getInstance().getPlayerInfo(args[2]);
+						UUID pUuid = PlayerManager.getInstance().getUUID(args[2]);
 						
-						try {
-							String prefix = args[3].contains("D") ? "P" : "PT";
-							String subD = args[3].replace("D", "DT");
-							String strD = prefix + subD;
-							System.out.println(strD);
-							Duration d = Duration.parse(strD);
-							MailBoxController.getInstance().sendItem(rPlayerInfo.getName(), player.getInventory().getItemInMainHand(), d );
-							player.sendMessage("Vous avez envoyé un objet a " + rPlayerInfo.getName() );
-							
-						} catch(DateTimeParseException e) {
-							player.sendMessage("wrong duration");
-						}								
+						if(pUuid != null) {
+							PlayerInfo pi = new PlayerInfo(args[2], pUuid);
+						
+							try {
+								String prefix = args[3].contains("D") ? "P" : "PT";
+								String subD = args[3].replace("D", "DT");
+								String strD = prefix + subD;
+								System.out.println(strD);
+								Duration d = Duration.parse(strD);
+								MailBoxController.getInstance().sendItem(pi.getName(), player.getInventory().getItemInMainHand(), d );
+								player.sendMessage("Vous avez envoyé un objet a " + pi.getName() );
+								
+							} catch(DateTimeParseException e) {
+								player.sendMessage("wrong duration");
+							}								
+						} else {
+							player.sendMessage("Cible inconnu");
+						}
 					}
 				}
 				
 			} else if(args.length == 3) {
-				PlayerInfo rPlayerInfo = PlayerManager.getInstance().getPlayerInfo(args[2]);
+				UUID pUuid = PlayerManager.getInstance().getUUID(args[2]);
 				
-				if(rPlayerInfo != null) {
+				if(pUuid != null) {
+					PlayerInfo pi = new PlayerInfo(args[2], pUuid);
 					
 					if(args.length == 3) {
 						if(args[0].equalsIgnoreCase("item")) {
 							if(args[1].equalsIgnoreCase("send")) {
-								MailBoxController.getInstance().sendItem(rPlayerInfo.getName(), player.getInventory().getItemInMainHand(), Duration.ofSeconds(20) );
-								player.sendMessage("Vous avez envoyé un objet a " + rPlayerInfo.getName() );
+								MailBoxController.getInstance().sendItem(pi.getName(), player.getInventory().getItemInMainHand(), Duration.ofSeconds(20) );
+								player.sendMessage("Vous avez envoyé un objet a " + pi.getName() );
 								
 							}
 						} else if (args[0].equalsIgnoreCase("letter")) {
 							if(args[1].equalsIgnoreCase("send")) {
-								MailBoxController.getInstance().sendLetter(rPlayerInfo.getUuid(), player.getInventory().getItemInMainHand() );
-								player.sendMessage("Vous avez envoyé une lettre a " + rPlayerInfo.getName() );
+								MailBoxController.getInstance().sendLetter(pi.getUuid(), player.getInventory().getItemInMainHand() );
+								player.sendMessage("Vous avez envoyé une lettre a " + pi.getName() );
 								
 							}
 							
@@ -115,10 +123,12 @@ public class Cmd_mailbox implements CommandExecutor {
 					}
 				}
 			} else if (args.length == 1) {
-				PlayerInfo source = PlayerManager.getInstance().getPlayerInfo(args[0]);
+				UUID pUuid = PlayerManager.getInstance().getUUID(args[0]);
 				
-				if(source != null) {
-					MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(source.getUuid()) );
+				if(pUuid != null) {
+					PlayerInfo pi = new PlayerInfo(args[0], pUuid);
+					
+					MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(pi.getUuid()) );
 					mailBox.openInventory(player);
 					
 				} else {

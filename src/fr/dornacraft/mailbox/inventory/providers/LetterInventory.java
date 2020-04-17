@@ -21,6 +21,8 @@ import fr.dornacraft.mailbox.DataManager.LetterType;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
+import fr.dornacraft.mailbox.inventory.providers.utils.AuthorFilter;
+import fr.dornacraft.mailbox.playerManager.PlayerInfo;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
 
 public class LetterInventory extends InventoryProviderBuilder {
@@ -40,7 +42,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 	// secondary
 	private List<LetterData> toShow = new ArrayList<>();
-	private List<String> showedAuthors = new ArrayList<>();
+	private AuthorFilter filter = new AuthorFilter();
 	private LetterType showedLetterType = null;
 	private Integer letterTypeIndex = -1;
 	private Boolean isSortingByDecreasingDate = true;
@@ -65,7 +67,6 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
-		this.setToShow(dataManager.getTypeData(this.getDataSource(), LetterData.class) );
 		Pagination pagination = contents.pagination();
 		pagination.setItemsPerPage(27);
 
@@ -80,8 +81,8 @@ public class LetterInventory extends InventoryProviderBuilder {
 		}
 
 		contents.set(4, 2,ClickableItem.of(new ItemStackBuilder(PLAYER_FILTER_MATERIAL)
-				.setName("§c§7" + (this.getShowedAuthors().isEmpty() ? "Filtre par joueurs" : this.getShowedAuthors().size() + " joueurs selectionnés")).build(), e -> {
-							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getShowedAuthors(), "§lExpéditeurs a affichés:", this);
+				.setName("§c§7Filtre joueur:" ).addLore(this.getAuthorFilter().getPreview()).build(), e -> {
+							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getAuthorFilter(), "§lExpéditeurs a affichés:", this);
 							selector.openInventory(player);
 
 						}));
@@ -117,7 +118,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 		}
 
-		if (!this.getShowedAuthors().isEmpty()) {
+		if (!this.getAuthorFilter().getList().isEmpty()) {
 			this.setToShow(this.filterByAuthors(this.getToShow()));
 			
 		}
@@ -145,7 +146,6 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 					} else {// lecture dans le chat
 						MailBoxController.getInstance().readLetter(player, tempData);
-						player.closeInventory();
 
 					}
 
@@ -171,8 +171,12 @@ public class LetterInventory extends InventoryProviderBuilder {
 	}
 
 	private List<LetterData> filterByAuthors(List<LetterData> list) {
+		List<String> authorsNames = this.getAuthorFilter().getList().stream()
+				.map(PlayerInfo::getName)
+				.collect(Collectors.toList());
+		
         List<LetterData> res = list.stream()
-                .filter(letterData -> this.getShowedAuthors().contains(letterData.getAuthor()) )
+                .filter(letterData -> authorsNames.contains(letterData.getAuthor() ) )
                 .collect(Collectors.toList());   
 		
 		
@@ -318,14 +322,6 @@ public class LetterInventory extends InventoryProviderBuilder {
 	public void setIsSortingByDecreasingDate(Boolean isSortingByDecreasingDate) {
 		this.isSortingByDecreasingDate = isSortingByDecreasingDate;
 	}
-	
-	public List<String> getShowedAuthors() {
-		return showedAuthors;
-	}
-
-	public void setShowedAuthors(List<String> showedAuthors) {
-		this.showedAuthors = showedAuthors;
-	}
 
 	public List<LetterData> getToShow() {
 		return toShow;
@@ -333,5 +329,13 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 	public void setToShow(List<LetterData> toShow) {
 		this.toShow = toShow;
+	}
+
+	public AuthorFilter getAuthorFilter() {
+		return filter;
+	}
+
+	public void setAuthorFilter(AuthorFilter filter) {
+		this.filter = filter;
 	}
 }

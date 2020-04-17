@@ -125,12 +125,12 @@ public class MailBoxController {
 	
 	public ItemStack getBookView(LetterData letterData) {
 		StringBuilder letterHead = new StringBuilder();
-		letterHead.append(String.format("§e§lAutheur(e):§r %s\n", letterData.getAuthor()));
+		letterHead.append(String.format("§lAutheur(e):§r %s\n", letterData.getAuthor()));
 		
 		SimpleDateFormat sdf =  new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
 		
-		letterHead.append(String.format("§e§lDate de récéption:§r %s\n", sdf.format(letterData.getCreationDate()) ));
-		letterHead.append(String.format("§e§lObject:\n - %s§r\n", letterData.getObject() ) );
+		letterHead.append(String.format("§lDate de récéption:§r %s\n", sdf.format(letterData.getCreationDate()) ));
+		letterHead.append(String.format("§lObject:§r %s\n", letterData.getObject() ) );
 		
 		ItemStack book = new ItemStackBuilder(Material.WRITTEN_BOOK).build();
 		BookMeta bookMeta = (BookMeta) book.getItemMeta();
@@ -143,7 +143,6 @@ public class MailBoxController {
 		bookMeta.setTitle(letterData.getObject());
 		
 		book.setItemMeta(bookMeta);
-		System.out.println("here");
 		
 		return book;
 	}
@@ -222,26 +221,31 @@ public class MailBoxController {
 	}
 	
 	public void sendItem(String recipient, ItemStack itemstack, Duration d) {
-		PlayerInfo playerInfo = PlayerManager.getInstance().getPlayerInfo(recipient);
+		UUID pUuid = PlayerManager.getInstance().getUUID(recipient);
 		
-		if (playerInfo != null) {
-			Data data = new DataFactory(playerInfo.getUuid(), recipient, "object hard code"); //TODO parametrize author
+		if(pUuid != null) {
+			PlayerInfo pi = new PlayerInfo(recipient, pUuid);
+			
+			Data data = new DataFactory(pi.getUuid(), recipient, "object hard code"); //TODO parametrize author
 			ItemData temp = ItemDataSQL.getInstance().create(new ItemData(data, itemstack, d) );
 			
 			if(temp != null) {
-				DataHolder rHolder = getDataManager().getDataHolder(playerInfo.getUuid());
+				DataHolder rHolder = getDataManager().getDataHolder(pi.getUuid());
 				if(rHolder != null) {
 					rHolder.addData(temp);
 				}
 				
-				Player p = Bukkit.getPlayer(playerInfo.getUuid());
+				Player p = Bukkit.getPlayer(pi.getUuid());
 				if(p != null) {
-					p.sendMessage("Vous avez reçu un objet de la part de " + playerInfo.getName() );
+					p.sendMessage("Vous avez reçu un objet de la part de " + pi.getName() );
 					
 				}
 			} else {
-				//TODO return false
+				//TODO probleme with database
 			}
+			
+		} else {
+			//TODO player not found
 		}
 	}
 

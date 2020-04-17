@@ -1,10 +1,11 @@
 package fr.dornacraft.mailbox.playerManager;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class PlayerManager {
@@ -16,57 +17,69 @@ public class PlayerManager {
 		
 	}
 	
-	private Map<String, UUID> map = new HashMap<>();
+	private List<PlayerInfo> cache = new ArrayList<>();
 	
 	private PlayerManager() {
 		
 	}
-	
+
 	public void init() {
 		for(PlayerInfo pi : playerInfoSql.getAll()){
-			map.put(pi.getName(), pi.getUuid());
+			this.addOnce(pi);
 		}
 		
+	}
+	
+	private void addOnce(PlayerInfo playerInfo) {
+		if(!this.getCache().contains(playerInfo) ) {
+			this.getCache().add(playerInfo);
+		}
 	}
 	
 	public void load(Player player) {
 		PlayerInfo pi = playerInfoSql.tryRegister(player);
-		this.map.put(pi.getName(), pi.getUuid());
+		this.addOnce(pi);
+
+		
+	}
+	
+	public List<PlayerInfo> getOnlinePlayers() {
+		return this.getCacheView().stream()
+			.filter(pi -> Bukkit.getPlayer(pi.getUuid()) != null )
+			.collect(Collectors.toList());
+		
+	}
+	
+	public List<PlayerInfo> getOfflinePlayers() {
+		return this.getCacheView().stream()
+			.filter(pi -> Bukkit.getPlayer(pi.getUuid()) == null )
+			.collect(Collectors.toList());
 		
 	}
 	
 	public UUID getUUID(String name) {
-		return this.map.get(name);
+		return this.getCache().stream()
+				.filter(pi -> pi.getName().equals(name))
+				.map(PlayerInfo::getUuid)
+				.findAny()
+				.orElse(null);
 	}
 	
 	public String getName(UUID uuid) {
-		String res = null;
-		
-		for(Entry<String, UUID> entry : this.map.entrySet()) {
-			if(entry.getValue().equals(uuid)) {
-				res = entry.getKey();
-				break;
-			}
-			
-		}
-		
-		return res;
+		return this.getCache().stream()
+				.filter(pi -> pi.getUuid().equals(uuid))
+				.map(PlayerInfo::getName)
+				.findAny()
+				.orElse(null);
 	}
 	
-	public PlayerInfo getPlayerInfo(String name) {
-		UUID uuid = this.getUUID(name);
-		PlayerInfo res = null;
-		
-		if(uuid != null) {
-			res = new PlayerInfo(name, this.map.get(name));
-		}
-		
-		return res;
+	private List<PlayerInfo> getCache() {
+		return this.cache;
 	}
 	
-	public Map<String, UUID> getCache(){
-		Map<String, UUID> clone = new HashMap<>();
-		clone.putAll(this.map);
-		return clone;
+	public List<PlayerInfo> getCacheView(){
+		List<PlayerInfo> res = new ArrayList<>();
+		res.addAll(this.cache);
+		return res;
 	}
 }
