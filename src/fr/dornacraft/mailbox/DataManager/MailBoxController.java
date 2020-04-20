@@ -69,7 +69,7 @@ public class MailBoxController {
 	}
 	
 	/**
-	 * trouve le dataHolder associ� a l'uuid donn�e
+	 * trouve le dataHolder associé a l'uuid donné
 	 */
 	public DataHolder getDataHolder(UUID uuid) {
 		DataHolder res = dataManager.getDataHolder(uuid);
@@ -98,6 +98,15 @@ public class MailBoxController {
 			}
 		} else {
 			//TODO null pointer (erreur d'acces a la BDD
+		}
+		
+	}
+	
+	public void sendLetter(LetterData letterData, List<UUID> recipients) {
+		for(UUID uuid : recipients ) {//FIXME si l'envoie echoue, ne pas faire le reste
+			LetterData toSend = letterData.clone();
+			toSend.setUuid(uuid );
+			MailBoxController.getInstance().sendLetter(toSend);
 		}
 		
 	}

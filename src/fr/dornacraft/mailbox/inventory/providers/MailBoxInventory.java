@@ -28,7 +28,6 @@ public class MailBoxInventory extends InventoryProviderBuilder {
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
 		
-		
 		contents.set(1, 2, ClickableItem.of(new ItemStackBuilder(LETTER_MENU_MATERIAL).setName("§f§lMenu des lettres reçues").build(), e -> {
 			LetterInventory inv = new LetterInventory(this.getDataSource(), this);
 			inv.openInventory(player);
@@ -44,25 +43,26 @@ public class MailBoxInventory extends InventoryProviderBuilder {
 			ItemStack cursor = e.getCursor();
 			
 			if (click == ClickType.LEFT ) {
-				if(cursor.getType() == Material.WRITTEN_BOOK && cursor.hasItemMeta() ) { // avancé
-					BookMeta meta = (BookMeta) cursor.getItemMeta();
-					
-					if(meta.getPages() != null && !meta.getPages().isEmpty() ) {
+				if(!LetterCreator.isCreatingLetter(player)) {//le joueur est dejà en edition TODO
+					if(cursor.getType() == Material.WRITTEN_BOOK && cursor.hasItemMeta() ) { // avancé
+						if(player.getInventory().firstEmpty() > -1) {
+							BookMeta meta = (BookMeta) cursor.getItemMeta();
+							player.getInventory().addItem(cursor);
+							e.setCursor(null);
+							player.closeInventory();
+							LetterCreator creator = new LetterCreator();
+							creator.setContent(meta.getPages() );
+							creator.startCreation(player);
+							
+						} else {
+							player.sendMessage("Faites d'abord de la place dans votre inventaire.");
+						}
+					} else {//simple
 						player.closeInventory();
-						LetterCreator creator = new LetterCreator(player);
-						creator.setContent(meta.getPages() );
+						LetterCreator creator = new LetterCreator();
 						creator.startCreation(player);
-						
-					} else {
-						
-						
 					}
-				} else {//simple
-					player.closeInventory();
-					LetterCreator creator = new LetterCreator(player);
-					creator.startCreation(player);
 				}
-				
 				
 			}
 		}));
