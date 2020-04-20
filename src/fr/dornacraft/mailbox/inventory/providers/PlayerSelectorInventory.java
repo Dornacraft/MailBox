@@ -12,7 +12,7 @@ import fr.dornacraft.devtoolslib.smartinvs.content.Pagination;
 import fr.dornacraft.devtoolslib.smartinvs.content.SlotIterator;
 import fr.dornacraft.mailbox.ItemStackBuilder;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
-import fr.dornacraft.mailbox.inventory.providers.utils.AuthorFilter;
+import fr.dornacraft.mailbox.inventory.providers.utils.IdentifiableAuthors;
 import fr.dornacraft.mailbox.listeners.PlayerChatSelector;
 
 public class PlayerSelectorInventory extends InventoryProviderBuilder {
@@ -20,24 +20,24 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	public static final Material CHOOSE_FACTION_MATERIAL = Material.MAGENTA_BANNER;
 	public static final Material CHOOSE_PRECISE_PLAYER_MATERIAL = Material.PLAYER_HEAD;
 	
-	private AuthorFilter authorFilter;
+	private IdentifiableAuthors identifiableAuthors;
 	private PlayerChatSelector selector = null;
 	private ClickableItem optional;
 	
-	public PlayerSelectorInventory(AuthorFilter authorFilter, String invTitle) {
+	public PlayerSelectorInventory(IdentifiableAuthors identifiableAuthors, String invTitle) {
 		super("MailBox_Player_Selector", invTitle, 3);
-		this.setAuthorFilter(authorFilter);
+		this.setAuthorFilter(identifiableAuthors);
 	}
 	
-	public PlayerSelectorInventory(AuthorFilter authorFilter, String invTitle, InventoryProviderBuilder parent) {
+	public PlayerSelectorInventory(IdentifiableAuthors identifiableAuthors, String invTitle, InventoryProviderBuilder parent) {
 		super("MailBox_Player_Selector", invTitle, 3, parent);
-		this.setAuthorFilter(authorFilter);
+		this.setAuthorFilter(identifiableAuthors);
 	}
 	
 	@Override
 	public void initializeInventory(Player player, InventoryContents contents) {
 		if(this.getSelector() == null) {
-			this.setSelector(new PlayerChatSelector(player, this.getAuthorFilter(), this));
+			this.setSelector(new PlayerChatSelector(this.getAuthorFilter(), this));
 			
 		}
 		
@@ -50,10 +50,11 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		}));
 		
 		contents.set(1, 4, ClickableItem.of(new ItemStackBuilder(CHOOSE_PRECISE_PLAYER_MATERIAL).setName("§f§lJoueur précis").build(), e -> {
-			this.setFinalClose(false);
-			this.getSelector().start();
-			player.closeInventory();
-			
+			if(!PlayerChatSelector.isUsingPCS(player) ) {
+				this.setFinalClose(false);
+				this.getSelector().start(player);
+				player.closeInventory();
+			}
 			
 		}));
 		
@@ -77,11 +78,11 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 	public void updateInventory(Player player, InventoryContents contents) {
 		contents.set(0, 4, ClickableItem.of(new ItemStackBuilder(Material.REDSTONE)
 				.setName("§f§lLe filtre contient:")
-				.addLore(String.format(" - %s joueurs", this.getAuthorFilter().getList().size() ))
+				.addLore(String.format(" - %s joueurs", this.getAuthorFilter().getPlayerList().size() ))
 				.addLore("Click droit pour supprimer les filtres")
 				.build(), e -> {
 					if(e.getClick() == ClickType.RIGHT) {
-						this.getAuthorFilter().clear();
+						this.getAuthorFilter().reset();
 					}
 				}));
 		
@@ -106,11 +107,11 @@ public class PlayerSelectorInventory extends InventoryProviderBuilder {
 		this.optional = optional;
 	}
 
-	public AuthorFilter getAuthorFilter() {
-		return authorFilter;
+	public IdentifiableAuthors getAuthorFilter() {
+		return identifiableAuthors;
 	}
-	public void setAuthorFilter(AuthorFilter authorFilter) {
-		this.authorFilter = authorFilter;
+	public void setAuthorFilter(IdentifiableAuthors identifiableAuthors) {
+		this.identifiableAuthors = identifiableAuthors;
 	}
 	
 }

@@ -2,27 +2,89 @@ package fr.dornacraft.mailbox.command;
 
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import fr.dornacraft.devtoolslib.acf.BaseCommand;
+import fr.dornacraft.devtoolslib.acf.annotation.CommandAlias;
+import fr.dornacraft.devtoolslib.acf.annotation.CommandPermission;
+import fr.dornacraft.devtoolslib.acf.annotation.Default;
+import fr.dornacraft.devtoolslib.acf.annotation.Subcommand;
+import fr.dornacraft.devtoolslib.acf.annotation.Syntax;
 import fr.dornacraft.mailbox.DataManager.DataHolder;
-import fr.dornacraft.mailbox.DataManager.DataManager;
-import fr.dornacraft.mailbox.DataManager.ItemData;
 import fr.dornacraft.mailbox.DataManager.LetterData;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
+import fr.dornacraft.mailbox.inventory.providers.LetterInventory;
 import fr.dornacraft.mailbox.inventory.providers.MailBoxInventory;
 import fr.dornacraft.mailbox.playerManager.PlayerInfo;
 import fr.dornacraft.mailbox.playerManager.PlayerManager;
-import fr.dornacraft.mailbox.sql.ItemDataSQL;
 
-public class Cmd_mailbox implements CommandExecutor {
-
+@CommandAlias("mailbox|mb")
+public class Cmd_mailbox extends BaseCommand {
+	
+	@Default
+	@CommandPermission("mailbox.openmenu.remote.self")
+	private void onOpenSelf(Player player) {
+		MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(player.getUniqueId()) );
+		mailBox.openInventory(player);
+	}
+	
+	@Default
+	@CommandPermission("mailbox.openmenu.remote.other")
+	private void onOpenOther(Player player, String name) {
+		UUID pUuid = PlayerManager.getInstance().getUUID(name);
+		
+		if(pUuid != null) {
+			PlayerInfo pi = new PlayerInfo(name, pUuid);
+			
+			MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(pi.getUuid()) );
+			mailBox.openInventory(player);
+			
+		} else {
+			player.sendMessage("Joueur " + name + " inconnu");
+		}
+	}
+	
+	@Subcommand("check")
+	@CommandPermission("mailbox.check")
+	private void onCheckNotifications(Player player) {
+			DataHolder pHolder = MailBoxController.getInstance().getDataHolder(player.getUniqueId());
+			List<LetterData> letterList = MailBoxController.getInstance().getDataManager().getTypeData(pHolder, LetterData.class);
+			Integer nonRead = LetterInventory.filterByReadState(letterList, false).size();
+			player.sendMessage("Vous avez " + nonRead + " lettres non lues.");
+		
+	}
+	
+	@Subcommand("item send")
+	@Syntax("/mailbox item send <joueur> <durée>")
+	@CommandPermission("mailbox.send.item")
+	private void onItemSend(Player player, String pName, String duration) {
+		UUID pUuid = PlayerManager.getInstance().getUUID(pName);
+		
+		if(pUuid != null) {
+			PlayerInfo pi = new PlayerInfo(pName, pUuid);
+		
+			try {
+				String prefix = duration.replace(" ", "").contains("D") ? "P" : "PT";
+				String subD = duration.replace("D", "DT");
+				String strD = prefix + subD;
+				Duration d = Duration.parse(strD);
+				MailBoxController.getInstance().sendItem(pi.getName(), player.getInventory().getItemInMainHand(), d );
+				player.sendMessage("Vous avez envoyé un objet a " + pi.getName() );
+				
+			} catch(DateTimeParseException e) {
+				player.sendMessage("Durée \""+ duration + "\" impossible.");
+			}
+			
+		} else {
+			player.sendMessage("Cible inconnu");
+		}
+		
+	}
+	
+	/*
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
@@ -136,12 +198,13 @@ public class Cmd_mailbox implements CommandExecutor {
 				}
 			}
 		} else {
-			MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(player.getUniqueId()));
+			MailBoxInventory mailBox = new MailBoxInventory(MailBoxController.getInstance().getDataHolder(player.getUniqueId()) );
 			mailBox.openInventory(player);
 			
 		}
+		
 		return false;
-
 	}
 	
+	*/
 }

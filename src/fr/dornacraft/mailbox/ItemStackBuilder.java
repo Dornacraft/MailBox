@@ -24,6 +24,7 @@ public class ItemStackBuilder {
 	private List<String> lore = new ArrayList<>();
 	private Map<Enchantment, Integer> enchantments = new HashMap<>();
 	private List<ItemFlag> flags = new ArrayList<>();
+	private Integer stackSize = 1;
 	
 	public ItemStackBuilder() {
 		
@@ -36,6 +37,7 @@ public class ItemStackBuilder {
 	
 	public ItemStack build() {
 		ItemStack res = new ItemStack(this.getMaterial());
+		res.setAmount(this.getStackSize());
 		ItemMeta meta = res.getItemMeta();
 		meta.setLore(this.getLore());
 		meta.setDisplayName(this.getName());
@@ -122,6 +124,19 @@ public class ItemStackBuilder {
 
 	public ItemStackBuilder setLoreFormat(String loreFormat) {
 		this.loreFormat = loreFormat;
+		return this;
+	}
+
+	public Integer getStackSize() {
+		return stackSize;
+	}
+
+	public ItemStackBuilder setStackSize(Integer stackSize, Boolean canBeUnderOne) {
+		if(!canBeUnderOne && stackSize < 1) {
+			this.stackSize = 1;
+		} else {
+			this.stackSize = stackSize;
+		}
 		return this;
 	}
 }

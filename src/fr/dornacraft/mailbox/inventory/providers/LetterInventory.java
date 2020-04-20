@@ -21,7 +21,7 @@ import fr.dornacraft.mailbox.DataManager.LetterType;
 import fr.dornacraft.mailbox.DataManager.MailBoxController;
 import fr.dornacraft.mailbox.inventory.MailBoxInventoryHandler;
 import fr.dornacraft.mailbox.inventory.builders.InventoryProviderBuilder;
-import fr.dornacraft.mailbox.inventory.providers.utils.AuthorFilter;
+import fr.dornacraft.mailbox.inventory.providers.utils.IdentifiableAuthors;
 import fr.dornacraft.mailbox.playerManager.PlayerInfo;
 import fr.dornacraft.mailbox.sql.LetterDataSQL;
 
@@ -42,9 +42,10 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 	// secondary
 	private List<LetterData> toShow = new ArrayList<>();
-	private AuthorFilter filter = new AuthorFilter();
+	private IdentifiableAuthors filter = new IdentifiableAuthors();
 	private LetterType showedLetterType = null;
 	private Integer letterTypeIndex = -1;
+	private Integer notReadYet = 0;
 	private Boolean isSortingByDecreasingDate = true;
 
 	private MailBoxInventoryHandler inventoryHandler = MailBoxInventoryHandler.getInstance();
@@ -81,7 +82,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 		}
 
 		contents.set(4, 2,ClickableItem.of(new ItemStackBuilder(PLAYER_FILTER_MATERIAL)
-				.setName("§c§7Filtre joueur:" ).addLore(this.getAuthorFilter().getPreview()).build(), e -> {
+				.setName("§c§7Filtre joueur:" ).setLore(this.getAuthorFilter().getPreview()).build(), e -> {
 							PlayerSelectorInventory selector = new PlayerSelectorInventory(this.getAuthorFilter(), "§lExpéditeurs a affichés:", this);
 							selector.openInventory(player);
 
@@ -118,7 +119,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 		}
 
-		if (!this.getAuthorFilter().getList().isEmpty()) {
+		if (!this.getAuthorFilter().getPlayerList().isEmpty()) {
 			this.setToShow(this.filterByAuthors(this.getToShow()));
 			
 		}
@@ -150,8 +151,10 @@ public class LetterInventory extends InventoryProviderBuilder {
 					}
 
 				} else if (clickType == ClickType.RIGHT && player.getUniqueId().equals(tempData.getUuid())) {//Toggle read state
-					tempData.setIsRead(!tempData.getIsRead());
-					LetterDataSQL.getInstance().update(tempData);
+					if(tempData.getUuid().equals(player.getUniqueId()) ){
+						tempData.setIsRead(!tempData.getIsRead());
+						LetterDataSQL.getInstance().update(tempData);
+					}
 
 				} else if (clickType == ClickType.CONTROL_DROP) {// supprimer
 					DeletionDataInventory inv = new DeletionDataInventory(this.getDataSource(), tempData.getId(), "§c§lSupprimer la lettre ?", this);
@@ -171,7 +174,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 	}
 
 	private List<LetterData> filterByAuthors(List<LetterData> list) {
-		List<String> authorsNames = this.getAuthorFilter().getList().stream()
+		List<String> authorsNames = this.getAuthorFilter().getPlayerList().stream()
 				.map(PlayerInfo::getName)
 				.collect(Collectors.toList());
 		
@@ -183,7 +186,7 @@ public class LetterInventory extends InventoryProviderBuilder {
 		return res;
 	};
 	
-	private List<LetterData> filterByReadState(List<LetterData> letterList, Boolean isRead) {
+	public static List<LetterData> filterByReadState(List<LetterData> letterList, Boolean isRead) {
         List<LetterData> res = letterList.stream()
                 .filter(letter -> letter.getIsRead().equals(isRead) )
                 .collect(Collectors.toList());   
@@ -201,17 +204,23 @@ public class LetterInventory extends InventoryProviderBuilder {
 
 	// generate items
 	private ClickableItem generateNonReadLettersItem(Player player) {
-		List<LetterData> list = this.filterByReadState(dataManager.getTypeData(this.getDataSource(), LetterData.class), false);
+		List<LetterData> list = filterByReadState(dataManager.getTypeData(this.getDataSource(), LetterData.class), false);
 		
 		ItemStack itemStack = new ItemStackBuilder(NON_READ_LETTERS_MATERIAL)
-				.setName(String.format("§l§eVous avez %s lettres non lues.", list.size()))
+				.setName(String.format("§l§e%s lettres non lues.", list.size() ))
 				.addLore("clique pour toutes les")
-				.addLore("marquée comme lues.").build();
+				.addLore("marquée comme lues.")
+				.setStackSize(list.size(), false )
+				.build();
 
 		return ClickableItem.of(itemStack, e -> {
 			for (LetterData letterData : list ) {
-				letterData.setIsRead(true);
-				LetterDataSQL.getInstance().update(letterData);
+				if(letterData.getUuid().equals(player.getUniqueId()) ){
+					letterData.setIsRead(true);
+					LetterDataSQL.getInstance().update(letterData);
+				} else {
+					break;
+				}
 			}
 		});
 	}
@@ -331,11 +340,19 @@ public class LetterInventory extends InventoryProviderBuilder {
 		this.toShow = toShow;
 	}
 
-	public AuthorFilter getAuthorFilter() {
+	public IdentifiableAuthors getAuthorFilter() {
 		return filter;
 	}
 
-	public void setAuthorFilter(AuthorFilter filter) {
+	public void setAuthorFilter(IdentifiableAuthors filter) {
 		this.filter = filter;
+	}
+
+	public Integer getNotReadYet() {
+		return notReadYet;
+	}
+
+	public void setNotReadYet(Integer notReadYet) {
+		this.notReadYet = notReadYet;
 	}
 }

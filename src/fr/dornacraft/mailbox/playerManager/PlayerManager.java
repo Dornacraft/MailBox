@@ -44,14 +44,14 @@ public class PlayerManager {
 	}
 	
 	public List<PlayerInfo> getOnlinePlayers() {
-		return this.getCacheView().stream()
+		return this.getRegisteredPlayers().stream()
 			.filter(pi -> Bukkit.getPlayer(pi.getUuid()) != null )
 			.collect(Collectors.toList());
 		
 	}
 	
 	public List<PlayerInfo> getOfflinePlayers() {
-		return this.getCacheView().stream()
+		return this.getRegisteredPlayers().stream()
 			.filter(pi -> Bukkit.getPlayer(pi.getUuid()) == null )
 			.collect(Collectors.toList());
 		
@@ -77,7 +77,7 @@ public class PlayerManager {
 		return this.cache;
 	}
 	
-	public List<PlayerInfo> getCacheView(){
+	public List<PlayerInfo> getRegisteredPlayers(){
 		List<PlayerInfo> res = new ArrayList<>();
 		res.addAll(this.cache);
 		return res;

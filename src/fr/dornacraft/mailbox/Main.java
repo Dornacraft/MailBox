@@ -4,6 +4,7 @@ import java.util.logging.Level;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+import fr.dornacraft.devtoolslib.acf.BukkitCommandManager;
 import fr.dornacraft.devtoolslib.smartinvs.InventoryManager;
 import fr.dornacraft.devtoolslib.smartinvs.SmartInventory;
 import fr.dornacraft.devtoolslib.smartinvs.SmartInventory.Builder;
@@ -17,11 +18,16 @@ import fr.dornacraft.mailbox.sql.SQLConnection;
 public class Main extends JavaPlugin {
 	/*
 	 * TODO LIST
-	 * objet d'un lettre -> max 100 caracteres
-	 * contenue d'une lettre -> max 300 caracteres
+	 * .listener des builder ?
+	 * listeners non supprimé ???
 	 * 
 	 * 
 	 */
+	private static InventoryManager manager;
+	public static InventoryManager getManager() {
+		return manager;
+	}
+	
 	private static Builder builder;
 	public static Builder getBuilder() {
 		return builder;
@@ -44,16 +50,20 @@ public class Main extends JavaPlugin {
 		
 		if(SQLConnection.getInstance().getConnection() != null && SQLConnection.getInstance().isConnected() ) {
 		
-			InventoryManager manager = new InventoryManager(this);
+			manager = new InventoryManager(this);
 			manager.init();
 			builder = SmartInventory.builder().manager(manager);
 			PlayerManager.getInstance().init();
 	
 			
-			this.getCommand("mailbox").setExecutor(new Cmd_mailbox());
+			//this.getCommand("mailbox").setExecutor(new Cmd_mailbox());
 			this.registerListeners();
 			
 			MailBoxController.getInstance().initialize();
+			
+			BukkitCommandManager manager = new BukkitCommandManager(this);
+			
+	        manager.registerCommand(new Cmd_mailbox());
 			
 		} else {
 			this.getLogger().log(Level.SEVERE, "Le plugin a besoin d'un connexion une base de donnée pour fonctionner");
